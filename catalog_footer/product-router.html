@@ -196,6 +196,19 @@
             if (!target) return false;
             if (isIgnoredClickTarget(target)) return false;
 
+            if (
+                isProductPage() &&
+                closest(target, [
+                    '.t-store__product-snippet',
+                    '.js-store-product.js-product',
+                    '.t-store__prod-popup',
+                    '.t-store__product-popup'
+                ].join(',')) &&
+                !closest(target, '.selfles-related-card')
+            ) {
+                return false;
+            }
+
             card = closest(target, [
                 '.js-product.t-store__card',
                 '.t-store__card',
@@ -562,6 +575,23 @@
             return roots;
         }
 
+        function moveProductTabs(root, info) {
+            var tabs;
+
+            if (!root || !info) return;
+
+            tabs = findOne([
+                '.js-store-tabs.t-store__tabs',
+                '.t-store__tabs'
+            ], root);
+
+            if (!tabs) return;
+            if (closest(tabs, '.selfles-product-main-layout__info') === info) return;
+
+            tabs.classList.add('selfles-product-details-tabs');
+            info.appendChild(tabs);
+        }
+
         function fixProductRoot(root) {
             var info;
             var gallery;
@@ -600,6 +630,7 @@
             fixCurrencyText(info);
             hideProductMeta(info);
             updateSlider(parent);
+            moveProductTabs(root, info);
         }
 
         function repairProductLinks(root) {

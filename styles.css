@@ -3613,3 +3613,89 @@ body .t-store__product-popup .t-slds__bgimg {
         box-sizing: border-box !important;
     }
 }
+
+/* SELFLES: product details tabs inside right info column */
+.selfles-product-main-layout__info .selfles-product-details-tabs,
+.selfles-product-main-layout__info .js-store-tabs.t-store__tabs,
+.selfles-product-main-layout__info .t-store__tabs {
+    width: 100% !important;
+    max-width: 520px !important;
+    float: none !important;
+    clear: none !important;
+    margin: 28px 0 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.selfles-product-main-layout__info .t-store__tabs__controls-wrap {
+    display: none !important;
+}
+
+.selfles-product-main-layout__info .t-store__tabs__list {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.selfles-product-main-layout__info .t-store__tabs__item {
+    border-top: 1px dashed #EE413C !important;
+    border-bottom: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.selfles-product-main-layout__info .t-store__tabs__item:last-child {
+    border-bottom: 1px dashed #EE413C !important;
+}
+
+.selfles-product-main-layout__info .t-store__tabs__item-button,
+.selfles-product-main-layout__info .js-store-tab-button {
+    border: 0 !important;
+    padding: 14px 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    background: transparent !important;
+}
+
+.selfles-product-main-layout__info .t-store__tabs__item-title,
+.selfles-product-main-layout__info .t-store__tabs__button-title {
+    font-family: "Inter", Arial, sans-serif !important;
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+    font-weight: 600 !important;
+    color: #EE413C !important;
+    text-transform: none !important;
+    margin: 0 !important;
+}
+
+.selfles-product-main-layout__info .t-store__tabs__content {
+    font-family: "Inter", Arial, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+    font-weight: 400 !important;
+    color: #373737 !important;
+    padding: 0 0 18px !important;
+    margin: 0 !important;
+    border: 0 !important;
+}
+
+.selfles-product-main-layout__info .t-store__tabs__content blockquote,
+.selfles-product-main-layout__info .t-store__tabs__content .t-redactor__preface {
+    margin: 0 0 8px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+}
+
+.selfles-product-main-layout__info .t-store__tabs__close svg g {
+    stroke: #EE413C !important;
+}
+
+@media screen and (max-width: 960px) {
+    .selfles-product-main-layout__info .selfles-product-details-tabs,
+    .selfles-product-main-layout__info .js-store-tabs.t-store__tabs,
+    .selfles-product-main-layout__info .t-store__tabs {
+        max-width: none !important;
+        margin-top: 24px !important;
+    }
+}
