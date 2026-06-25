@@ -3825,13 +3825,42 @@ body.selfles-product-page .selfles-buy-zone .t-btn {
     stroke: #EE413C !important;
 }
 
-.selfles-product-main-layout__info .t-store__tabs__item_active .t-store__tabs__close svg g path:last-child {
-    opacity: 0 !important;
-}
-
 body.selfles-product-page .t-store__relevants__container .t-store__scroll-icon-wrapper {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
+}
+
+/* ===== SELFLES: product tabs icon and left title fix ===== */
+
+body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__item-button,
+body.selfles-product-page .selfles-product-main-layout__info .js-store-tab-button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    width: 100% !important;
+}
+
+body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__item-title,
+body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__button-title,
+body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__item-button h2 {
+    display: block !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: calc(100% - 48px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
+    align-self: center !important;
+}
+
+body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__close {
+    margin-left: auto !important;
+    flex: 0 0 24px !important;
+}
+
+body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__close svg g path {
+    opacity: 1 !important;
 }
