@@ -1,11 +1,11 @@
 <style>
 body.selfles-product-page #rec2310894021,
 #rec2310894021.selfles-product-flow-fixed {
-  display: block !important;
+  display: flow-root !important;
   width: 100% !important;
   max-width: none !important;
   height: auto !important;
-  min-height: 760px !important;
+  min-height: 0 !important;
   overflow: visible !important;
   position: relative !important;
   z-index: 2 !important;
@@ -15,13 +15,11 @@ body.selfles-product-page #rec2310894021,
 body.selfles-product-page #rec2310894021 .t-store,
 body.selfles-product-page #rec2310894021 .t-store__prod-snippet__container,
 body.selfles-product-page #rec2310894021 .t-store__product-snippet,
-body.selfles-product-page #rec2310894021 .selfles-product-fluid-container,
-body.selfles-product-page #rec2310894021 .selfles-product-main-layout {
+body.selfles-product-page #rec2310894021 .selfles-product-fluid-container {
   width: 100% !important;
   max-width: none !important;
   height: auto !important;
   overflow: visible !important;
-  position: relative !important;
   box-sizing: border-box !important;
 }
 
@@ -40,18 +38,13 @@ body.selfles-product-page #t-footer {
   position: relative !important;
   z-index: 1 !important;
 }
-
-@media screen and (max-width: 959px) {
-  body.selfles-product-page #rec2310894021,
-  #rec2310894021.selfles-product-flow-fixed {
-    min-height: 980px !important;
-  }
-}
 </style>
 <script>
 (function () {
   var INIT_ATTR = 'data-selfles-product-record-flow-fix';
   var PRODUCT_RECORD_ID = 'rec2310894021';
+  var MIN_SAFE_HEIGHT = 320;
+  var MAX_SAFE_HEIGHT = 3200;
 
   if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
   document.documentElement.setAttribute(INIT_ATTR, '1');
@@ -94,28 +87,34 @@ body.selfles-product-page #t-footer {
       '.t-store__prod-snippet__info',
       '.selfles-product-main-layout__gallery',
       '.selfles-product-main-layout__info',
-      '.selfles-product-main-layout',
-      '.selfles-product-fluid-container',
+      '.selfles-buy-zone',
+      '.js-store-prod-text',
       '.t-store__product-snippet',
       '.js-store-error-msg'
     ].join(','), root);
   }
 
-  function forceBlockFlow(node) {
+  function forceRecordFlow(node) {
     if (!node) return;
 
     node.style.setProperty('width', '100%', 'important');
     node.style.setProperty('max-width', 'none', 'important');
     node.style.setProperty('height', 'auto', 'important');
     node.style.setProperty('overflow', 'visible', 'important');
-    node.style.setProperty('position', 'relative', 'important');
     node.style.setProperty('box-sizing', 'border-box', 'important');
   }
 
+  function resetRunawayHeight(root) {
+    if (!root) return;
+
+    root.style.setProperty('height', 'auto', 'important');
+    root.style.setProperty('min-height', '0px', 'important');
+  }
+
   function measureProductHeight(root) {
-    var rootRect = root.getBoundingClientRect();
-    var maxBottom = rootRect.bottom;
-    var minTop = rootRect.top;
+    var rootTop = root.getBoundingClientRect().top;
+    var minTop = null;
+    var maxBottom = null;
 
     contentNodes(root).forEach(function (node) {
       var rect;
@@ -123,17 +122,25 @@ body.selfles-product-page #t-footer {
       if (!isVisible(node)) return;
 
       rect = node.getBoundingClientRect();
-      minTop = Math.min(minTop, rect.top);
-      maxBottom = Math.max(maxBottom, rect.bottom);
+      minTop = minTop === null ? rect.top : Math.min(minTop, rect.top);
+      maxBottom = maxBottom === null ? rect.bottom : Math.max(maxBottom, rect.bottom);
     });
 
-    return Math.ceil(maxBottom - minTop + 32);
+    if (minTop === null || maxBottom === null) return 0;
+
+    return Math.ceil(maxBottom - Math.min(rootTop, minTop) + 32);
+  }
+
+  function clampHeight(height) {
+    if (!height || height < MIN_SAFE_HEIGHT) return 0;
+    return Math.min(height, MAX_SAFE_HEIGHT);
   }
 
   function applyProductRecordFlowFix() {
     var root;
     var product;
     var height;
+    var footer;
 
     if (!isProductPage()) return;
 
@@ -151,17 +158,21 @@ body.selfles-product-page #t-footer {
       root.querySelector('.t-store'),
       root.querySelector('.t-store__prod-snippet__container'),
       root.querySelector('.t-store__product-snippet'),
-      root.querySelector('.selfles-product-fluid-container'),
-      root.querySelector('.selfles-product-main-layout')
-    ].forEach(forceBlockFlow);
+      root.querySelector('.selfles-product-fluid-container')
+    ].forEach(forceRecordFlow);
 
-    height = measureProductHeight(root);
-    if (height > 240) {
+    resetRunawayHeight(root);
+    height = clampHeight(measureProductHeight(root));
+
+    if (height) {
       root.style.setProperty('min-height', height + 'px', 'important');
+    } else {
+      root.style.setProperty('min-height', '0px', 'important');
     }
 
-    if (document.getElementById('t-footer')) {
-      document.getElementById('t-footer').style.setProperty('clear', 'both', 'important');
+    footer = document.getElementById('t-footer');
+    if (footer) {
+      footer.style.setProperty('clear', 'both', 'important');
     }
   }
 
