@@ -834,11 +834,31 @@
                 }, delay);
             });
 
-            if ('MutationObserver' in window && document.body) {
-                var observer = new MutationObserver(function () {
+            if ('MutationObserver' in window) {
+                var observerTarget = findRelatedContainer(getCurrentProductRoot()) ||
+                    document.getElementById('allrecords') ||
+                    document.body;
+
+                var observer = new MutationObserver(function (records) {
                     var sku = getCurrentSku();
+                    var hasImportantMutation;
 
                     if (isRenderingRelated) return;
+
+                    hasImportantMutation = records.some(function (record) {
+                        if (record.type !== 'childList') return false;
+
+                        return Array.prototype.slice.call(record.addedNodes).some(function (node) {
+                            if (!node || node.nodeType !== 1) return false;
+
+                            return node.matches && (
+                                node.matches('.t-store__relevants__container, .js-store-relevants-grid-cont, .t-store__relevants-grid-cont, .t-store__card, .js-product-relevant') ||
+                                node.querySelector('.t-store__relevants__container, .js-store-relevants-grid-cont, .t-store__relevants-grid-cont, .t-store__card, .js-product-relevant')
+                            );
+                        });
+                    });
+
+                    if (!hasImportantMutation) return;
 
                     enrichManifestFromDom();
 
@@ -847,11 +867,9 @@
                     }
                 });
 
-                observer.observe(document.body, {
+                observer.observe(observerTarget, {
                     childList: true,
-                    subtree: true,
-                    attributes: true,
-                    attributeFilter: ['class', 'style']
+                    subtree: true
                 });
             }
         }
