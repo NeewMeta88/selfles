@@ -3864,3 +3864,38 @@ body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__clo
 body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__close svg g path {
     opacity: 1 !important;
 }
+
+/* ===== SELFLES: stable product buy zone visibility ===== */
+body.selfles-product-page .selfles-buy-zone {
+    min-height: 0 !important;
+}
+
+body.selfles-product-page .selfles-buy-zone > .t-store__prod-popup__btn-wrapper,
+body.selfles-product-page .selfles-buy-zone > .t-store__prod__btn-wrapper,
+body.selfles-product-page .selfles-buy-zone > .js-store-prod-popup-buy-btn-wrapper {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+body.selfles-product-page .selfles-buy-zone .t-store__prod-popup__btn,
+body.selfles-product-page .selfles-buy-zone .t-store__prod__btn,
+body.selfles-product-page .selfles-buy-zone .js-store-prod-popup-buy-btn,
+body.selfles-product-page .selfles-buy-zone .t-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+/* ===== SELFLES: stable product tabs initial state ===== */
+body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__item:not(.t-store__tabs__item_active) .t-store__tabs__content {
+    display: none !important;
+}
+
+body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__item_active .t-store__tabs__content {
+    display: block !important;
+}
