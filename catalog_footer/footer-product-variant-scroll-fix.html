@@ -1,0 +1,154 @@
+<script>
+(function () {
+  var INIT_ATTR = 'data-selfles-product-variant-scroll-fix';
+  var STORAGE_KEY = 'selflesProductVariantNavigation';
+
+  if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
+  document.documentElement.setAttribute(INIT_ATTR, '1');
+
+  function closest(node, selector) {
+    if (!node || !node.closest) return null;
+    return node.closest(selector);
+  }
+
+  function isProductPage() {
+    var path = location.pathname.replace(/\/+$/, '');
+    return path.indexOf('/tproduct/') !== -1 ||
+      path.indexOf('/catalog/tproduct/') !== -1 ||
+      path.indexOf('/product/') !== -1;
+  }
+
+  function isPrimaryPointerEvent(event) {
+    if (!event) return false;
+    if (event.type === 'touchstart') return true;
+    if (event.button && event.button !== 0) return false;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
+    return true;
+  }
+
+  function getOptionNode(target) {
+    var option = closest(target, [
+      '.selfles-product-options__size',
+      '.selfles-product-options__color',
+      '.selfles-product-options__sizes button',
+      '.selfles-product-options__colors button',
+      '.selfles-product-options button'
+    ].join(','));
+
+    if (!option) return null;
+    if (closest(option, '#rec2417486561')) return null;
+    if (option.disabled) return null;
+    if (option.getAttribute('aria-disabled') === 'true') return null;
+    if (option.getAttribute('data-selfles-option-blocked') === '1') return null;
+    if (option.getAttribute('data-unavailable') === 'true') return null;
+    if (option.classList.contains('selfles-option-disabled') || option.classList.contains('is-disabled')) return null;
+
+    return option;
+  }
+
+  function markVariantNavigation(event) {
+    var option;
+    var payload;
+
+    if (!isProductPage()) return;
+    if (!isPrimaryPointerEvent(event)) return;
+
+    option = getOptionNode(event.target);
+    if (!option) return;
+
+    payload = {
+      at: Date.now(),
+      href: location.href,
+      optionText: (option.getAttribute('aria-label') || option.getAttribute('title') || option.textContent || '').trim()
+    };
+
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {}
+
+    document.documentElement.classList.add('selfles-variant-navigation-pending');
+  }
+
+  function readNavigationMark() {
+    var raw;
+    var parsed;
+
+    try {
+      raw = sessionStorage.getItem(STORAGE_KEY);
+      parsed = raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      parsed = null;
+    }
+
+    if (!parsed || !parsed.at) return null;
+    if (Date.now() - Number(parsed.at) > 20000) return null;
+
+    return parsed;
+  }
+
+  function clearNavigationMark() {
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+
+    document.documentElement.classList.remove('selfles-variant-navigation-pending');
+  }
+
+  function getProductRoot() {
+    return document.querySelector('#rec2310894021') ||
+      document.querySelector('.t-store__product-snippet') ||
+      document.querySelector('.js-store-product.js-product') ||
+      document.querySelector('.selfles-product-main-layout');
+  }
+
+  function scrollToProductTop() {
+    var root;
+
+    if (!isProductPage()) return;
+    if (!readNavigationMark()) return;
+
+    root = getProductRoot();
+
+    try {
+      window.scrollTo({top: 0, left: 0, behavior: 'auto'});
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
+
+    if (root && root.scrollIntoView) {
+      try {
+        root.scrollIntoView({block: 'start', inline: 'nearest', behavior: 'auto'});
+      } catch (e) {
+        root.scrollIntoView(true);
+      }
+    }
+  }
+
+  function scheduleProductScrollReset() {
+    if (!isProductPage()) return;
+    if (!readNavigationMark()) return;
+
+    scrollToProductTop();
+    [40, 120, 300, 700, 1300].forEach(function (delay) {
+      setTimeout(scrollToProductTop, delay);
+    });
+    setTimeout(clearNavigationMark, 1800);
+  }
+
+  try {
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  } catch (e) {}
+
+  ['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(function (eventName) {
+    document.addEventListener(eventName, markVariantNavigation, true);
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleProductScrollReset);
+  } else {
+    scheduleProductScrollReset();
+  }
+
+  window.addEventListener('load', scheduleProductScrollReset);
+}());
+</script>
