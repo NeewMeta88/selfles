@@ -1,0 +1,202 @@
+<style>
+html.selfles-product-options-stabilizing .selfles-product-options {
+  opacity: 0 !important;
+}
+
+html.selfles-product-options-stable .selfles-product-options {
+  opacity: 1 !important;
+  transition: opacity 0.12s ease-out !important;
+}
+</style>
+<script>
+(function () {
+  var INIT_ATTR = 'data-selfles-product-options-runtime-guard';
+  var STORE_KEY = 'SELFLES_PRODUCTS_BY_SKU';
+  var STABILIZING_CLASS = 'selfles-product-options-stabilizing';
+  var STABLE_CLASS = 'selfles-product-options-stable';
+  var stableTimer = null;
+  var storeValue;
+
+  if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
+  document.documentElement.setAttribute(INIT_ATTR, '1');
+
+  function isProductPage() {
+    var path = location.pathname.replace(/\/+$/, '');
+    return path.indexOf('/tproduct/') !== -1 ||
+      path.indexOf('/catalog/tproduct/') !== -1 ||
+      path.indexOf('/product/') !== -1 ||
+      document.body && document.body.classList.contains('selfles-product-page');
+  }
+
+  function cleanSku(value) {
+    var fn = window.SELFLES_PRODUCT_DATA && window.SELFLES_PRODUCT_DATA.canonicalSku;
+    if (typeof fn === 'function') return fn(value);
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function normalizeQuantity(value) {
+    var raw = String(value == null ? '' : value).trim();
+    var num;
+
+    if (raw === '') return value;
+    if (/^(notlimited|unlimited)$/i.test(raw)) return 99999;
+
+    num = Number(raw.replace(',', '.'));
+    return isFinite(num) ? num : value;
+  }
+
+  function normalizeProduct(product, fallbackSku) {
+    var sku;
+    var copy;
+    var key;
+
+    if (!product || typeof product !== 'object') return null;
+
+    sku = cleanSku(product.sku || fallbackSku || product.vendorcode || product.article || '');
+    if (!sku) return null;
+
+    copy = {};
+    for (key in product) {
+      if (Object.prototype.hasOwnProperty.call(product, key)) copy[key] = product[key];
+    }
+
+    copy.sku = sku;
+    copy.quantity = normalizeQuantity(copy.quantity);
+    return copy;
+  }
+
+  function sanitizeProductsBySku(value) {
+    var result = {};
+    var product;
+    var normalized;
+    var key;
+
+    if (!value || typeof value !== 'object') return result;
+
+    Object.keys(value).forEach(function (sku) {
+      product = value[sku];
+      normalized = normalizeProduct(product, sku);
+      if (!normalized) return;
+      result[normalized.sku] = normalized;
+    });
+
+    return result;
+  }
+
+  function installProductsBySkuGuard() {
+    var current;
+    var descriptor;
+
+    try {
+      descriptor = Object.getOwnPropertyDescriptor(window, STORE_KEY);
+    } catch (e) {
+      descriptor = null;
+    }
+
+    if (descriptor && descriptor.get && descriptor.set && window.__selflesProductsBySkuGuardInstalled) return;
+
+    try {
+      current = descriptor && descriptor.get ? descriptor.get.call(window) : window[STORE_KEY];
+    } catch (e) {
+      current = window[STORE_KEY];
+    }
+
+    storeValue = sanitizeProductsBySku(current);
+
+    try {
+      Object.defineProperty(window, STORE_KEY, {
+        configurable: true,
+        enumerable: true,
+        get: function () {
+          storeValue = sanitizeProductsBySku(storeValue);
+          return storeValue;
+        },
+        set: function (value) {
+          storeValue = sanitizeProductsBySku(value);
+        }
+      });
+      window.__selflesProductsBySkuGuardInstalled = true;
+    } catch (e) {
+      window[STORE_KEY] = storeValue;
+    }
+  }
+
+  function sanitizeGlobalProducts() {
+    installProductsBySkuGuard();
+
+    try {
+      window[STORE_KEY] = sanitizeProductsBySku(window[STORE_KEY]);
+    } catch (e) {}
+  }
+
+  function hasNullProducts() {
+    var products = window[STORE_KEY] || {};
+
+    return Object.keys(products).some(function (sku) {
+      return !products[sku] || typeof products[sku] !== 'object';
+    });
+  }
+
+  function hasOptions() {
+    return !!document.querySelector('.selfles-product-options');
+  }
+
+  function markStabilizing() {
+    if (!isProductPage()) return;
+    document.documentElement.classList.add(STABILIZING_CLASS);
+    document.documentElement.classList.remove(STABLE_CLASS);
+  }
+
+  function markStableSoon() {
+    if (!isProductPage()) return;
+
+    clearTimeout(stableTimer);
+    stableTimer = setTimeout(function () {
+      sanitizeGlobalProducts();
+
+      if (!hasOptions() || hasNullProducts()) {
+        markStableSoon();
+        return;
+      }
+
+      document.documentElement.classList.remove(STABILIZING_CLASS);
+      document.documentElement.classList.add(STABLE_CLASS);
+      document.documentElement.setAttribute('data-selfles-product-options-stable', '1');
+    }, 180);
+  }
+
+  function run() {
+    sanitizeGlobalProducts();
+    markStableSoon();
+  }
+
+  installProductsBySkuGuard();
+  markStabilizing();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+
+  [0, 60, 120, 250, 500, 1000, 1800, 3000, 5000].forEach(function (delay) {
+    setTimeout(run, delay);
+  });
+
+  window.addEventListener('load', run);
+  window.addEventListener('selfles:live-products-ready', run);
+  window.addEventListener('selfles:products-manifest-ready', run);
+
+  if ('MutationObserver' in window) {
+    new MutationObserver(function () {
+      clearTimeout(run.timer);
+      run.timer = setTimeout(run, 80);
+    }).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-selfles-sku', 'data-selfles-variants-hash', 'data-product-inv']
+    });
+  }
+}());
+</script>
