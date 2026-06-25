@@ -475,31 +475,41 @@
         }
 
         function fixBuyZone(info) {
-            var selectors = [
+            var quantity;
+            var price;
+            var buttonWrapper;
+            var nodes = [];
+            var outerNodes;
+            var zone;
+            var first;
+
+            if (!info) return;
+
+            quantity = findOne([
                 '.t-store__prod__quantity',
                 '.t-store__prod-popup__quantity',
                 '.t-store__prod-popup__quantity-wrapper',
-                '.js-store-prod-quantity',
+                '.js-store-prod-quantity'
+            ], info);
+
+            price = findOne([
                 '.js-store-price-wrapper',
                 '.t-store__prod-popup__price-wrapper',
-                '.t-store__prod__price-wrapper',
+                '.t-store__prod__price-wrapper'
+            ], info);
+
+            buttonWrapper = findOne([
                 '.t-store__prod-popup__btn-wrapper',
                 '.t-store__prod__btn-wrapper',
                 '.js-store-prod-popup-buy-btn-wrapper',
                 '.js-store-buttons-wrapper'
-            ];
+            ], info);
 
-            var nodes = [];
-            var zone;
-            var first;
-
-            selectors.forEach(function (selector) {
-                all(selector, info).forEach(function (node) {
-                    if (nodes.indexOf(node) !== -1) return;
-                    if (closest(node, '.selfles-buy-zone')) return;
-                    if (closest(node, '.t-store__cart, .t706')) return;
-                    nodes.push(node);
-                });
+            [quantity, price, buttonWrapper].forEach(function (node) {
+                if (!node) return;
+                if (nodes.indexOf(node) !== -1) return;
+                if (closest(node, '.t-store__cart, .t706')) return;
+                nodes.push(node);
             });
 
             if (!nodes.length) return;
@@ -510,7 +520,19 @@
                 zone = document.createElement('div');
                 zone.className = 'selfles-buy-zone';
 
-                first = nodes[0];
+                outerNodes = nodes.filter(function (node) {
+                    return !nodes.some(function (other) {
+                        return other !== node && other.contains && other.contains(node);
+                    });
+                });
+
+                outerNodes.sort(function (a, b) {
+                    if (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+                    return -1;
+                });
+
+                first = outerNodes[0] || nodes[0];
+
                 if (first && first.parentNode) {
                     first.parentNode.insertBefore(zone, first);
                 } else {
@@ -518,9 +540,9 @@
                 }
             }
 
-            nodes.forEach(function (node) {
-                zone.appendChild(node);
-            });
+            if (quantity) zone.appendChild(quantity);
+            if (price) zone.appendChild(price);
+            if (buttonWrapper) zone.appendChild(buttonWrapper);
         }
 
         function repairProductMainImage(root) {
