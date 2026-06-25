@@ -1,0 +1,42 @@
+<style>
+  .selfles-sticky-menu {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 9;
+  }
+
+  .selfles-sticky-menu--transition {
+    transition: all 0.4s cubic-bezier(0, 0, 0.8, 1);
+  }
+</style>
+<script>
+  (function () {
+    var INIT_ATTR = 'data-selfles-sticky-menu-v1';
+    var MENU_SELECTOR = '#rec2282012051';
+    var SCROLL_DISTANCE = 10;
+
+    if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
+    if (!window.jQuery || !window.$) return;
+
+    $(document).ready(function () {
+      var $menu = $(MENU_SELECTOR);
+
+      if (!$menu.length) return;
+
+      document.documentElement.setAttribute(INIT_ATTR, '1');
+      $menu.addClass('selfles-sticky-menu');
+
+      function updateMenuBackground() {
+        $menu.toggleClass('fonmenu', $(document).scrollTop() >= SCROLL_DISTANCE);
+      }
+
+      setTimeout(function () {
+        $menu.addClass('selfles-sticky-menu--transition');
+        updateMenuBackground();
+      }, 500);
+
+      $(window).on('scroll.selflesStickyMenuV1', updateMenuBackground);
+    });
+  })();
+</script>

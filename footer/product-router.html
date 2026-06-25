@@ -422,6 +422,45 @@
             });
         }
 
+        function setButtonText(button) {
+            var label;
+            var value;
+
+            if (!button) return;
+
+            label = button.querySelector('.t-btnflex__text, .t-btn__text, span, div');
+            value = (label || button).textContent || '';
+
+            if (
+                !value.trim() ||
+                /_?buy\s*now_?/i.test(value) ||
+                /add\s*to\s*cart/i.test(value) ||
+                /купить/i.test(value)
+            ) {
+                (label || button).textContent = 'в корзину';
+            }
+        }
+
+        function styleButtons(root) {
+            all([
+                '.t-store__prod-popup__btn',
+                '.t-store__prod__btn',
+                '.js-store-prod-popup-buy-btn',
+                '.t-store__prod-popup__btn-wrapper .t-btn',
+                '.t-store__prod__btn-wrapper .t-btn',
+                '.js-store-prod-popup-buy-btn-wrapper .t-btn'
+            ].join(','), root || document).forEach(function (button) {
+                if (closest(button, '.t706, .t-store__cart')) return;
+                setButtonText(button);
+                button.classList.add('selfles-product-buy-button-fixed');
+                button.style.setProperty('background-color', '#EE413C', 'important');
+                button.style.setProperty('background', '#EE413C', 'important');
+                button.style.setProperty('border-color', '#EE413C', 'important');
+                button.style.setProperty('color', '#fff', 'important');
+                button.style.setProperty('border-radius', '80px', 'important');
+            });
+        }
+
         function fixBuyZone(info) {
             var selectors = [
                 '.t-store__prod__quantity',
@@ -593,6 +632,7 @@
         function applyFixes() {
             repairProductLinks(document);
             getProductRoots().forEach(fixProductRoot);
+            styleButtons(document);
             redirectOpenedNativePopup();
         }
 

@@ -3,8 +3,14 @@
 <script>
     t_onReady(() => {
         const inputsbox = document.querySelector('.t706 .t-form__inputsbox')
+
+        if (!inputsbox) return
+
         const inputName = inputsbox.querySelector('input[name="Name"]')
-        const tSubmit = document.querySelector('button.t-submit')
+        const tSubmit = inputsbox.querySelector('button.t-submit') || document.querySelector('.t706 button.t-submit')
+
+        if (!inputName || !tSubmit) return
+
         let userinitials
 
         function inputValidation(input) {
@@ -25,11 +31,9 @@
             }
         }
 
-        function copyValue(userinitials) {
+        function copyValue(userinitials, value) {
             if (userinitials) {
-                userinitials.value = target.value
-            } else {
-                console.error('Не найдено поле ввода input[name="tildadelivery-userinitials"]')
+                userinitials.value = value
             }
         }
 
@@ -38,7 +42,7 @@
 
             target.value = inputValidation(target)
 
-            copyValue(userinitials)
+            copyValue(userinitials, target.value)
         })
 
         inputName.addEventListener('blur', (e) => {
@@ -47,8 +51,10 @@
             target.value = target.value.trim()
 
             blurValidation(target)
-            copyValue(userinitials)
+            copyValue(userinitials, target.value)
         })
+
+        if (!('MutationObserver' in window)) return
 
         const cartObserver = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
