@@ -621,6 +621,28 @@
             }
         }
 
+        function moveProductDescriptionBeforeBuyZone(info) {
+            var description;
+            var buyZone;
+
+            if (!info) return;
+
+            description = findOne([
+                '.js-store-prod-text.t-store__prod-popup__text',
+                '.js-store-prod-text',
+                '.t-store__prod-popup__text',
+                '.t-store__prod__text'
+            ], info);
+
+            buyZone = info.querySelector('.selfles-buy-zone');
+
+            if (!description || !buyZone || !buyZone.parentNode) return;
+            if (description === buyZone.previousElementSibling) return;
+            if (closest(description, '.t-store__cart, .t706')) return;
+
+            buyZone.parentNode.insertBefore(description, buyZone);
+        }
+
         function getImageUrlFromNode(node) {
             var value;
 
@@ -903,6 +925,7 @@
             info.classList.add('selfles-product-main-layout__info');
 
             fixBuyZone(info);
+            moveProductDescriptionBeforeBuyZone(info);
             fixCurrencyText(info);
             hideProductMeta(info);
             updateSlider(parent);

@@ -3899,3 +3899,48 @@ body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__ite
 body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__item_active .t-store__tabs__content {
     display: block !important;
 }
+
+/* ===== SELFLES: product description before buy zone and compact quantity ===== */
+body.selfles-product-page .selfles-product-main-layout__info .js-store-prod-text,
+body.selfles-product-page .selfles-product-main-layout__info .t-store__prod-popup__text,
+body.selfles-product-page .selfles-product-main-layout__info .t-store__prod__text {
+    margin: 18px 0 16px !important;
+    padding: 0 !important;
+}
+
+body.selfles-product-page .selfles-buy-zone {
+    row-gap: 8px !important;
+    margin-top: 0 !important;
+    padding-bottom: 18px !important;
+}
+
+body.selfles-product-page .selfles-buy-zone > .t-store__prod__quantity,
+body.selfles-product-page .selfles-buy-zone > .t-store__prod-popup__quantity,
+body.selfles-product-page .selfles-buy-zone > .js-store-prod-quantity,
+body.selfles-product-page .selfles-buy-zone > .t-store__prod-popup__quantity-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+body.selfles-product-page .selfles-buy-zone .t-store__prod__quantity__minus-wrapper,
+body.selfles-product-page .selfles-buy-zone .t-store__prod__quantity__plus-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+body.selfles-product-page .selfles-buy-zone .t-store__prod__quantity-input {
+    margin: 0 12px !important;
+    padding: 0 !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    line-height: 26px !important;
+}
