@@ -431,15 +431,41 @@
             });
         }
 
-        function findRelatedContainer() {
-            return document.querySelector('.t-store__relevants__container') ||
-                document.querySelector('.js-store-relevants-grid-cont') ||
-                document.querySelector('.t-store__relevants-grid-cont') ||
-                null;
+        function isInsideHiddenPopup(node) {
+            var popup;
+
+            if (!node || !node.closest) return false;
+
+            popup = node.closest('.t-popup');
+
+            return !!(popup && !popup.classList.contains('t-popup_show'));
+        }
+
+        function findRelatedContainer(root) {
+            var scope = root || getCurrentProductRoot() || document;
+            var popup;
+            var containers;
+
+            if (scope !== document && scope.closest) {
+                popup = scope.closest('.t-popup_show, .t-popup, .t-store__prod-popup__container, .t-store__product-popup');
+                scope = popup || scope;
+            }
+
+            containers = all([
+                '.t-store__relevants__container',
+                '.js-store-relevants-grid-cont',
+                '.t-store__relevants-grid-cont'
+            ].join(','), scope);
+
+            containers = containers.filter(function (container) {
+                return !isInsideHiddenPopup(container);
+            });
+
+            return containers[0] || null;
         }
 
         function getOrCreateRelatedRow(root) {
-            var container = findRelatedContainer();
+            var container = findRelatedContainer(root);
             var mount;
             var row;
 
@@ -745,7 +771,7 @@
         function shouldRepairRelated() {
             var currentSku = getCurrentSku();
             var expected = RELATED_BY_SKU[currentSku] ? RELATED_BY_SKU[currentSku].map(canonicalSku) : [];
-            var container = findRelatedContainer();
+            var container = findRelatedContainer(getCurrentProductRoot());
             var row = container ? (
                 container.querySelector('.t-store__card-list.selfles-related-generated__row') ||
                 container.querySelector('.t-store__card-list')
@@ -769,7 +795,7 @@
             var currentSku = getCurrentSku();
             var expected = RELATED_BY_SKU[currentSku] ? RELATED_BY_SKU[currentSku].map(canonicalSku) : [];
             var row = getOrCreateRelatedRow(getCurrentProductRoot());
-            var container = row ? row.closest('.t-store__relevants__container, .js-store-relevants-grid-cont, .t-store__relevants-grid-cont') : findRelatedContainer();
+            var container = row ? row.closest('.t-store__relevants__container, .js-store-relevants-grid-cont, .t-store__relevants-grid-cont') : findRelatedContainer(getCurrentProductRoot());
             var cards = row ? getRelatedCards(row) : [];
 
             clearNativeRelatedEmptyState(container);
