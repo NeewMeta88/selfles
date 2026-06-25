@@ -442,23 +442,43 @@
         }
 
         function findRelatedContainer(root) {
-            var scope = root || getCurrentProductRoot() || document;
+            var scopes = [];
+            var base = root || getCurrentProductRoot() || document;
             var popup;
-            var containers;
+            var store;
+            var rec;
+            var containers = [];
 
-            if (scope !== document && scope.closest) {
-                popup = scope.closest('.t-popup_show, .t-popup, .t-store__prod-popup__container, .t-store__product-popup');
-                scope = popup || scope;
+            function addScope(scope) {
+                if (!scope) return;
+                if (scopes.indexOf(scope) !== -1) return;
+                scopes.push(scope);
             }
 
-            containers = all([
-                '.t-store__relevants__container',
-                '.js-store-relevants-grid-cont',
-                '.t-store__relevants-grid-cont'
-            ].join(','), scope);
+            addScope(base);
 
-            containers = containers.filter(function (container) {
-                return !isInsideHiddenPopup(container);
+            if (base !== document && base.closest) {
+                popup = base.closest('.t-popup_show, .t-popup');
+                store = base.closest('.t-store');
+                rec = base.closest('.t-rec');
+
+                addScope(popup);
+                addScope(store);
+                addScope(rec);
+            }
+
+            addScope(document);
+
+            scopes.some(function (scope) {
+                containers = all([
+                    '.t-store__relevants__container',
+                    '.js-store-relevants-grid-cont',
+                    '.t-store__relevants-grid-cont'
+                ].join(','), scope).filter(function (container) {
+                    return !isInsideHiddenPopup(container);
+                });
+
+                return containers.length > 0;
             });
 
             return containers[0] || null;
