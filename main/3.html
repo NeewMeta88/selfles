@@ -1,0 +1,1028 @@
+<!-- Полные стили inline для гарантированного применения -->
+<style>
+  .set-wrap {
+    max-width: 1440px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns:1.2fr .8fr;
+    gap: 28px
+  }
+
+  #setConstructor.set-wrap {
+    max-width: 1440px;
+    margin: 0 auto;
+    display: grid !important;
+    grid-template-columns:1.2fr .8fr !important;
+    gap: 28px
+  }
+
+  .viz {
+    position: relative;
+    aspect-ratio: 1/1;
+    background: #f6f6f6;
+    border-radius: 14px;
+    overflow: hidden
+  }
+
+  #setConstructor .viz {
+    position: relative !important;
+    aspect-ratio: 1/1 !important;
+    background: #f6f6f6;
+    border-radius: 14px;
+    overflow: hidden
+  }
+
+  .viz img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block
+  }
+
+  #setConstructor .viz img {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important
+  }
+
+  .item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px
+  }
+
+  .toggle {
+    display: flex;
+    gap: 8px;
+    align-items: center
+  }
+
+  .swatches {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px
+  }
+
+  .btn {
+    padding: 16px 48px;
+    border-radius: 80px;
+    border: 0;
+    background: #EE413C;
+    color: #fff;
+    cursor: pointer
+  }
+
+  .btn--ghost {
+    background: transparent;
+    color: #111
+  }
+
+  .note {
+    font-size: 12px;
+    color: #EE413C
+  }
+
+  /* слои */
+  #img-base {
+    z-index: 1
+  }
+
+  #img-pillowcase, #img-sheet, #img-duvet {
+    z-index: 2;
+    opacity: 0;
+    transition: opacity .2s ease
+  }
+
+  #img-pillowcase.layer-visible, #img-sheet.layer-visible, #img-duvet.layer-visible {
+    opacity: 1
+  }
+
+  /* swatches */
+  .swatches {
+    cursor: default; /* Курсор по умолчанию для контейнера */
+  }
+
+  .swatches:has(.swatch[data-unavailable="true"]:hover),
+  .swatches:has(.swatch[aria-disabled="true"]:hover),
+  .swatches:has(.swatch:disabled:hover) {
+    cursor: not-allowed !important; /* Курсор not-allowed при наведении на недоступные элементы */
+  }
+
+  .swatch {
+    width: 26px;
+    height: 26px;
+    display: inline-block;
+    box-sizing: border-box;
+    padding: 0;
+    line-height: 0;
+    border: 0;
+    border-radius: 4px;
+    outline: 0;
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    transition: transform .08s ease, box-shadow .15s ease, border-color .15s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .swatch::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 145%;
+    height: 1.5px;
+    background: rgba(55, 55, 55, .55);
+    border-radius: 999px;
+    transform: translate(-50%, -50%) rotate(-45deg) scaleX(0);
+    transform-origin: center;
+    opacity: 0;
+    transition: opacity .15s ease, transform .15s ease;
+    pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .22);
+  }
+
+  .swatch:hover:not(:disabled):not([aria-disabled="true"]):not([data-unavailable="true"]) {
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, .10);
+    transform: translateY(-1px)
+  }
+
+  .swatch[aria-selected="true"] {
+    border: 2px solid #EE413C;
+    box-shadow: none
+  }
+
+  .swatch:focus-visible {
+    outline: 2px solid #EE413C;
+    outline-offset: 2px
+  }
+
+  /* Активные элементы должны быть кликабельными */
+  .swatch:not(:disabled):not([aria-disabled="true"]):not([data-unavailable="true"]) {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+  }
+
+  /* Заблокированные цвета: некликабельны, но курсор должен отображаться */
+  .swatch:disabled,
+  .swatch[aria-disabled="true"],
+  .swatch[data-unavailable="true"] {
+    opacity: 0.38 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important; /* Разрешаем события мыши для отображения курсора */
+  }
+
+  .swatch:disabled::after,
+  .swatch[aria-disabled="true"]::after,
+  .swatch[data-unavailable="true"]::after {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-45deg) scaleX(1);
+  }
+
+  /* Курсор not-allowed при наведении на недоступные элементы */
+  .swatch:disabled:hover,
+  .swatch[aria-disabled="true"]:hover,
+  .swatch[data-unavailable="true"]:hover {
+    cursor: not-allowed !important;
+  }
+
+  #setConstructor .swatch:disabled,
+  #setConstructor .swatch[aria-disabled="true"],
+  #setConstructor .swatch[data-unavailable="true"] {
+    opacity: 0.38 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important; /* Разрешаем события мыши для отображения курсора */
+  }
+
+  /* Курсор not-allowed при наведении на недоступные элементы в конструкторе */
+  #setConstructor .swatch:disabled:hover,
+  #setConstructor .swatch[aria-disabled="true"]:hover,
+  #setConstructor .swatch[data-unavailable="true"]:hover {
+    cursor: not-allowed !important;
+  }
+
+  /* Дополнительная защита для недоступных элементов */
+  .swatch[data-unavailable="true"] {
+    cursor: not-allowed !important;
+  }
+
+  #setConstructor .swatch[data-unavailable="true"] {
+    cursor: not-allowed !important;
+  }
+
+  /* qty */
+  .qty {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px
+  }
+
+  .qty-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .08s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+
+  .qty-btn:hover {
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, .06)
+  }
+
+  .qty-input {
+    width: 56px;
+    height: 34px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 14px;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .qty-input::-webkit-outer-spin-button, .qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0
+  }
+
+  .qty:has(.qty-input:disabled) {
+    opacity: .5
+  }
+
+  /* ====== под макет ====== */
+  #setConstructor .item {
+    background: transparent;
+    border: 0;
+    padding: 0
+  }
+
+  #setConstructor .item-head {
+    margin-bottom: 6px
+  }
+
+  #setConstructor .item-head strong {
+    color: #EE413C;
+    text-transform: uppercase;
+    font-family: "Oswald";
+    font-weight: bold;
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  #setConstructor .toggle {
+    display: none
+  }
+
+  #setConstructor .qty {
+    gap: 14px;
+    margin: 8px 0 18px
+  }
+
+  #setConstructor .qty-btn {
+    width: auto;
+    height: auto;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #D64B42;
+    font-size: 20px;
+    line-height: 1;
+    padding: 0 4px;
+    border-radius: 0
+  }
+
+  #setConstructor .qty-input {
+    width: auto;
+    min-width: 24px;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    text-align: center;
+    font-size: 20px;
+    color: #373737
+  }
+
+  #setConstructor .actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0
+  }
+
+  #setConstructor .btn--ghost {
+    border: 0;
+    background: transparent;
+    color: #F6C1CD;
+    padding: 0;
+    font-size: 14px
+  }
+
+  #setConstructor .btn--ghost:hover {
+    text-decoration: underline;
+    box-shadow: none
+  }
+
+  #setConstructor .total span:first-child {
+    color: #EE413C;
+    text-transform: uppercase
+  }
+
+  #setConstructor .total .sum {
+    font-family: "Oswald" !important;
+    font-weight: 500 !important;
+    font-size: 64px !important;
+    line-height: 1.2 !important;
+    color: #EE413C !important
+  }
+
+  #setConstructor #addToCart {
+    background: #EE413C;
+    color: #fff;
+    border-radius: 999px;
+    font-family: "Inter";
+    font-weight: 500;
+    font-size: 20px;
+    padding: 18px 28px;
+    display: inline-block;
+    margin-top: 14px;
+    width: 60%;
+  }
+
+  #setConstructor #addToCart:hover {
+    box-shadow: 0 8px 28px -6px rgba(214, 75, 66, .35)
+  }
+
+  #setConstructor .microcopy {
+    color: #EE413C;
+    font-size: 12px;
+    font-family: "Inter";
+    margin: 8px 0 24px
+  }
+
+  #setConstructor .subnote {
+    font-family: "Inter";
+    font-weight: 400;
+    font-size: 16px;
+    color: #373737;
+    display: inline-block;
+    margin: 8px 0 8px
+  }
+
+  #setConstructor .qty [aria-disabled="true"] {
+    opacity: .45;
+    pointer-events: none
+  }
+
+  /* селект размера */
+  #setConstructor .size {
+    display: block;
+    margin: 6px 0 10px;
+    color: #EE413C;
+    font-size: 14px
+  }
+
+  #setConstructor .size-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background: #fff;
+    border: 1px solid #373737;
+    border-radius: 8px;
+    padding: 8px 12px;
+    padding-right: 48px;
+    font-size: 14px;
+    cursor: pointer;
+    box-sizing: border-box;
+    width: min(100%, 340px);
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 12px 12px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4 L10 4 L6 9 Z' fill='%23EE413C'/></svg>");
+  }
+
+  #setConstructor .size-select::-ms-expand {
+    display: none
+  }
+
+  #setConstructor .size-select:focus {
+    outline: 2px solid #EE413C;
+    outline-offset: 1px;
+    border-color: #EE413C
+  }
+
+  /* порядок слоёв: пододеяльник → простыня → наволочки (верх) */
+  #img-duvet {
+    z-index: 4 !important
+  }
+
+  #img-sheet {
+    z-index: 2 !important
+  }
+
+  #img-pillowcase {
+    z-index: 3 !important
+  }
+
+  /* ===== MOBILE LAYOUT (<= 768px) ===== */
+  @media (max-width: 768px) {
+    /* единый базовый отступ слева */
+    #setConstructor {
+      --m-pad: 10px;
+    }
+
+    #setConstructor.set-wrap {
+      grid-template-columns:1fr !important;
+      gap: 18px !important
+    }
+
+    #setConstructor .viz {
+      aspect-ratio: auto !important;
+      height: 92vw !important;
+      max-height: none !important;
+      border-radius: 0 !important;
+      border: 0 !important
+    }
+
+    /* все строки правой колонки выровняем по одной вертикали */
+    #setConstructor .controls > .item,
+    #setConstructor .size,
+    #setConstructor .total,
+    #setConstructor .microcopy,
+    #setConstructor #addToCart {
+      width: 90%;
+      max-width: 90%;
+      padding-left: var(--m-pad);
+    }
+
+    /* селект: убираем внутренний левый паддинг, чтобы текст не уходил ещё правее */
+    #setConstructor .size-select {
+      width: 100%;
+      display: block;
+      padding: 12px 48px 12px 12px; /* ← слева 0, справа место под стрелку */
+      font-size: 16px;
+      background-position: right 14px center;
+    }
+
+    #setConstructor .swatches {
+      gap: 12px
+    }
+
+    #setConstructor .swatch {
+      width: 30px;
+      height: 30px
+    }
+
+    #setConstructor .qty {
+      width: 50%;
+      gap: 16px;
+      margin-top: 12px
+    }
+
+    #setConstructor .qty-input {
+      font-size: 18px
+    }
+
+    #setConstructor .total {
+      padding: 16px 0 0 var(--m-pad);
+    }
+
+    #setConstructor .total .sum {
+      font-size: calc(48px + 1.2vw)
+    }
+
+    #setConstructor #addToCart {
+      width: 90%;
+      padding: 16px 20px;
+      border-radius: 50px;
+      font-size: 18px
+    }
+
+    /* microcopy: делаем блочной, чтобы ВСЕ строки имели одинаковый отступ */
+    #setConstructor .microcopy {
+      display: block; /* было inline */
+      padding-left: var(--m-pad); /* на всякий случай, если выводится вне общего списка */
+      text-indent: 0;
+      line-height: 1.4;
+    }
+  }
+
+  /* Цвет текста в закрытом селекте и (где возможно) в списке */
+  #setConstructor .size-select {
+    color: #373737;
+    -webkit-text-fill-color: #373737; /* iOS Safari */
+  }
+
+  #setConstructor .size-select option {
+    color: #373737
+  }
+
+  /* Мобилка: выровнять РАМКУ селекта по левому краю колонки */
+  @media (max-width: 768px) {
+    #setConstructor {
+      --m-pad: 10px
+    }
+
+    /* если уже есть — можно не дублировать */
+    /* сам селект выносим влево на размер левого паддинга родителя */
+    #setConstructor .size-select {
+      margin-left: calc(var(--m-pad) * -1) !important;
+      width: calc(100% + var(--m-pad)) !important; /* чтобы справа не сжался */
+      box-sizing: border-box;
+      margin-right: 0;
+      /* внутренний отступ текста оставляем комфортным */
+      padding: 12px 48px 12px 12px !important; /* слева 12px, справа под стрелку */
+    }
+
+    /* на всякий случай убираем возможные системные маргины у iOS */
+    #setConstructor .size-select {
+      margin: 0;
+      -webkit-margin-start: 0;
+    }
+  }
+
+  /* ====== блоки после кнопки — только на десктопе, в ПРАВОЙ колонке ====== */
+  .desk-info {
+    display: none
+  }
+
+  @media (min-width: 768px) {
+    #setConstructor .controls {
+      display: flex !important;
+      flex-direction: column !important
+    }
+
+    #setConstructor .controls #addToCart {
+      align-self: flex-start !important
+    }
+
+    .desk-info {
+      display: block !important;
+      margin-top: 40px;
+      width: 100%;
+      max-width: 100%
+    }
+  }
+
+  .desk-info .acc {
+    margin: 18px 0 12px
+  }
+
+  .desk-info .acc-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+    border: 0;
+    padding: 6px 0;
+    cursor: pointer;
+    text-align: left;
+    position: relative;
+  }
+
+  .desk-info .acc-head::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -6px;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, #EE413C 0 6px, transparent 6px 12px);
+  }
+
+  .desk-info .acc-closed .acc-head::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -14px;
+    height: 4px;
+    background: repeating-linear-gradient(90deg, #EE413C 0 6px, transparent 6px 12px);
+  }
+
+  .desk-info .acc-title {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    font-weight: 700; /* Inter Bold */
+    font-size: 18px;
+    color: #EE413C;
+    line-height: 1.4;
+  }
+
+  .desk-info .acc-icon::before {
+    content: "+";
+    font-size: 32px;
+    line-height: 1;
+    color: #EE413C
+  }
+
+  .desk-info .acc-head[aria-expanded="true"] .acc-icon::before {
+    content: "×"
+  }
+
+  .desk-info .acc-body {
+    margin-top: 0px;
+    margin-bottom: 10px;
+    color: #373737;
+    font: 400 14px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial
+  }
+
+  /* ——— Пунктир: аккуратнее (2px толщина, штрихи по 6px) ——— */
+  .desk-info .acc-head::before {
+    height: 2px !important;
+    background: repeating-linear-gradient(
+            90deg,
+            #EE413C 0 6px,
+            transparent 6px 12px
+    ) !important;
+  }
+
+  /* Нижний пунктир показываем только если секция ЗАКРЫТА и она ПОСЛЕДНЯЯ —
+     чтобы не было дублирования с верхним пунктиром следующей секции */
+  .desk-info .acc-closed .acc-head::after {
+    display: none !important; /* по умолчанию скрыт, чтобы не дублировался */
+    height: 2px !important;
+    background: repeating-linear-gradient(
+            90deg,
+            #EE413C 0 6px,
+            transparent 6px 12px
+    ) !important;
+  }
+
+  /* если закрытая секция — последняя, рисуем нижний пунктир */
+  .desk-info .acc-closed:last-child .acc-head::after {
+    display: block !important;
+  }
+
+  @media (min-width: 768px) {
+    #setConstructor .controls {
+      padding-right: clamp(20px, 4vw, 48px) !important;
+    }
+  }
+
+  /* единый зазор вокруг заголовка аккордеона */
+  :root {
+    --acc-gap: 10px;
+  }
+
+  /* поменяй число при желании */
+  .desk-info .acc-head {
+    padding: var(--acc-gap) 0 !important;
+  }
+
+  /* верхний пунктир ровно на величину зазора вверх */
+  .desk-info .acc-head::before {
+    top: calc(-1 * var(--acc-gap)) !important;
+    height: 2px !important;
+    background: repeating-linear-gradient(90deg, #EE413C 0 6px, transparent 6px 12px) !important;
+  }
+
+  /* нижний пунктир — только где нужно, но с тем же зазором вниз */
+  .desk-info .acc-closed .acc-head::after {
+    display: none !important; /* чтобы не дублировался со следующим блоком */
+    bottom: calc(-1 * var(--acc-gap)) !important;
+    height: 2px !important;
+    background: repeating-linear-gradient(90deg, #EE413C 0 6px, transparent 6px 12px) !important;
+  }
+
+  /* если закрытая секция — последняя, показываем нижний пунктир */
+  .desk-info .acc-closed:last-child .acc-head::after {
+    display: block !important;
+  }
+
+  .desk-info .acc-open .acc-body {
+    margin-bottom: 12px; /* можно убрать или подправить */
+  }
+
+  /* Скрываем блоки каталога визуально, но оставляем в DOM для работы с UID */
+  #rec2310894021,
+  #rec2397921511,
+  #rec1653024161,
+  #rec1556696391 {
+    display: none !important;
+  }
+
+  /* Стили для тостов */
+  #ucToast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    pointer-events: none;
+  }
+
+  .uc-toast {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
+    min-width: 320px;
+    max-width: 420px;
+    margin-bottom: 12px;
+    pointer-events: auto;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: opacity .25s ease, transform .25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .uc-toast--show {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .uc-toast__inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 20px;
+  }
+
+  .uc-toast__icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .uc-toast__title {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    font-weight: 600;
+    font-size: 16px;
+    color: #111;
+    margin-bottom: 4px;
+  }
+
+  .uc-toast__text {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
+  }
+
+  .uc-toast__link {
+    color: #EE413C;
+    text-decoration: underline;
+  }
+
+  .uc-toast__link:hover {
+    text-decoration: none;
+  }
+
+  .uc-toast__close {
+    background: transparent;
+    border: 0;
+    font-size: 24px;
+    line-height: 1;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    margin-left: auto;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: color .2s ease;
+  }
+
+  .uc-toast__close:hover {
+    color: #333;
+  }
+
+  .uc-toast__bar {
+    height: 3px;
+    background: #EE413C;
+    transform-origin: left;
+    transform: scaleX(1);
+    transition: transform linear;
+  }
+
+  @media (max-width: 768px) {
+    #ucToast {
+      top: 10px;
+      right: 10px;
+      left: 10px;
+    }
+
+    .uc-toast {
+      min-width: auto;
+      max-width: none;
+    }
+  }
+</style>
+
+<!-- HTML разметка конструктора -->
+<div class="set-wrap" id="setConstructor"
+     style="display: grid !important; grid-template-columns: 1.2fr 0.8fr !important; gap: 28px !important; max-width: 1440px !important; margin: 0px auto !important;">
+  <!-- визуал -->
+  <div class="viz"
+       style="position: relative !important; aspect-ratio: 1 / 1 !important; border-radius: 14px !important; background: rgb(246, 246, 246) !important; overflow: hidden !important;">
+    <img id="img-base" src="https://lh3.googleusercontent.com/d/1RjvrRppzSh5ezDXcthJNiC5U_0_ZeuGp" alt=""
+         style="position: absolute !important; inset: 0px !important; width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important;">
+    <img id="img-pillowcase" src="https://lh3.googleusercontent.com/d/1G41kU6nNOSRPPIJejZx4n54msL_0thFz"
+         alt="pillowcase layer" class="layer-visible"
+         style="position: absolute !important; inset: 0px !important; width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important;">
+    <img id="img-sheet" src="https://lh3.googleusercontent.com/d/142JumBjogn8q0IhybwA4Ruv1iciHIjkA"
+         alt="sheet layer" class="layer-visible"
+         style="position: absolute !important; inset: 0px !important; width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important;">
+    <img id="img-duvet" src="https://lh3.googleusercontent.com/d/1MauC_nJtzXHfgAEp1KvvrQgZMdnHy8sp"
+         alt="duvet layer" class="layer-visible"
+         style="position: absolute !important; inset: 0px !important; width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important;">
+  </div>
+
+  <!-- правый столбец — контролы -->
+  <div class="controls"
+       style="display: flex !important; flex-direction: column !important; padding-right: clamp(20px, 4vw, 48px) !important;">
+    <div class="item" data-item="pillowcase">
+      <div class="item-head">
+        <strong>Две наволочки</strong>
+        <div class="actions">
+          <button class="btn btn--ghost js-remove">убрать</button>
+        </div>
+      </div>
+      <span class="subnote">50 × 70</span>
+      <div class="swatches" role="listbox" aria-label="Цвет наволочек">
+        <button class="swatch" type="button" data-color="pink" title="розовый"
+                style="background: rgb(246, 193, 205); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="true"></button>
+        <button class="swatch" type="button" data-color="green" title="зелёный"
+                style="background: rgb(175, 217, 196); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="coffee" title="кофейный"
+                style="background: rgb(198, 180, 171); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="blue" title="голубой"
+                style="background: rgb(169, 214, 239); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="cream" title="сливочный"
+                style="background: rgb(251, 248, 236); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="white" title="белый"
+                style="background: rgb(244, 244, 244); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+      </div>
+      <div class="qty">
+        <button type="button" class="qty-btn js-qty-dec" aria-label="Уменьшить" disabled=""
+                aria-disabled="true">−
+        </button>
+        <input type="number" class="qty-input js-qty" value="1" min="1" max="10" inputmode="numeric"
+               pattern="[0-9]*" aria-label="Количество наволочек" disabled="" aria-disabled="true">
+        <button type="button" class="qty-btn js-qty-inc" aria-label="Увеличить">+</button>
+      </div>
+    </div>
+
+    <div class="item" data-item="duvet">
+      <div class="item-head">
+        <strong>Пододеяльник</strong>
+        <div class="actions">
+          <button class="btn btn--ghost js-remove">убрать</button>
+        </div>
+      </div>
+      <label class="size">
+        <select class="size-select js-size-duvet" aria-label="Размер пододеяльника">
+          <option value="150">150 × 200</option>
+          <option value="180">180 × 210</option>
+          <option value="200">200 × 220</option>
+          <option value="220">220 × 240</option>
+        </select>
+      </label>
+      <div class="swatches" role="listbox" aria-label="Цвет пододеяльника">
+        <button class="swatch" type="button" data-color="pink" title="розовый"
+                style="background: rgb(246, 193, 205); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="true"></button>
+        <button class="swatch" type="button" data-color="green" title="зелёный"
+                style="background: rgb(175, 217, 196); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="coffee" title="кофейный"
+                style="background: rgb(198, 180, 171); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="blue" title="голубой"
+                style="background: rgb(169, 214, 239); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="cream" title="сливочный"
+                style="background: rgb(251, 248, 236); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="white" title="белый"
+                style="background: rgb(244, 244, 244); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+      </div>
+      <div class="qty">
+        <button type="button" class="qty-btn js-qty-dec" aria-label="Уменьшить" disabled=""
+                aria-disabled="true">−
+        </button>
+        <input type="number" class="qty-input js-qty" value="1" min="1" max="10" inputmode="numeric"
+               pattern="[0-9]*" aria-label="Количество пододеяльников" disabled="" aria-disabled="true">
+        <button type="button" class="qty-btn js-qty-inc" aria-label="Увеличить">+</button>
+      </div>
+    </div>
+
+    <div class="item" data-item="sheet">
+      <div class="item-head">
+        <strong>Простыня</strong>
+        <div class="actions">
+          <button class="btn btn--ghost js-remove">убрать</button>
+        </div>
+      </div>
+
+      <label class="size">
+        <select class="size-select js-size" aria-label="Размер простыни">
+          <option value="160">160 × 200, на резинке</option>
+          <option value="180">180 × 200, на резинке</option>
+          <option value="KS">king size (240 × 260), без резинки</option>
+          <option value="EUR">euro (220 × 240), без резинки</option>
+        </select>
+      </label>
+
+      <div class="swatches" role="listbox" aria-label="Цвет простыни">
+        <button class="swatch" type="button" data-color="pink" title="розовый"
+                style="background: rgb(246, 193, 205); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="true"></button>
+        <button class="swatch" type="button" data-color="green" title="зелёный"
+                style="background: rgb(175, 217, 196); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="coffee" title="кофейный"
+                style="background: rgb(198, 180, 171); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="blue" title="голубой"
+                style="background: rgb(169, 214, 239); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="cream" title="сливочный"
+                style="background: rgb(251, 248, 236); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+        <button class="swatch" type="button" data-color="white" title="белый"
+                style="background: rgb(244, 244, 244); cursor: not-allowed; opacity: 0.3;" disabled=""
+                aria-disabled="true" data-unavailable="true" aria-selected="false"></button>
+      </div>
+      <div class="qty">
+        <button type="button" class="qty-btn js-qty-dec" aria-label="Уменьшить" disabled=""
+                aria-disabled="true">−
+        </button>
+        <input type="number" class="qty-input js-qty" value="1" min="1" max="10" inputmode="numeric"
+               pattern="[0-9]*" aria-label="Количество простыней" disabled="" aria-disabled="true">
+        <button type="button" class="qty-btn js-qty-inc" aria-label="Увеличить">+</button>
+      </div>
+    </div>
+
+    <div class="total"><span class="sum" id="totalSum"
+                             style="font-family: Oswald !important; font-weight: 500 !important; font-size: 64px !important; line-height: 1.2 !important; color: rgb(238, 65, 60) !important;">0 ₽</span>
+    </div>
+    <button class="btn" id="addToCart">в корзину</button>
+
+    <!-- десктоп-блоки В ПРАВОМ СТОЛБЦЕ -->
+    <div class="desk-info" id="deskInfo">
+      <section class="acc acc-open">
+        <button class="acc-head" type="button" aria-expanded="false">
+          <span class="acc-title">О МАТЕРИАЛЕ</span>
+          <span class="acc-icon" aria-hidden="true"></span>
+        </button>
+        <div class="acc-body" hidden="">
+          Постельное бельё <strong>selfles</strong> выполнено из 100% бамбукового волокна — гладкого и
+          мягкого,
+          напоминающего шёлк. Материал натуральный, экологичный и гипоаллергенный, хорошо пропускает воздух,
+          регулирует тепло и остаётся комфортным в любое время года. Благодаря нежной поверхности ткань
+          деликатна
+          к коже и волосам.
+        </div>
+      </section>
+
+      <section class="acc acc-closed">
+        <button class="acc-head" type="button" aria-expanded="false">
+          <span class="acc-title">ПРАВИЛА УХОДА</span>
+          <span class="acc-icon" aria-hidden="true"></span>
+        </button>
+        <div class="acc-body" hidden="">
+          – не отбеливайте бельё<br>
+          – не сушите его в барабане стиральной машины<br>
+          – не отдавайте на сухую чистку (химчистку)<br><br>
+          Всё это может испортить бельё.<br><br>
+          Стирать можно в машинке: деликатный режим, температура не более 30°С.<br>
+          Гладить при температуре до 110°С. Сушить естественным образом.
+        </div>
+      </section>
+    </div>
+    <!-- /desk-info -->
+
+  </div>
+</div>
+

@@ -1,0 +1,33 @@
+<script>
+  $(function(){
+    var link = "https://static.tildacdn.com/tild3332-3466-4564-a365-363633633333/shopping-cart_2.svg";
+
+    var $wrap = $(".t706__carticon-imgwrap");
+    if(!$wrap.length) return;
+
+    // Ставим фон, НЕ перезаписывая другие инлайновые стили
+    $wrap.css({
+      "background-image": "url(" + link + ")",
+      "background-size": "contain",
+      "background-position": "center",
+      "background-repeat": "no-repeat"
+    });
+
+    // Прячем внутренние svg/img, но не удаляем — чтобы не сломать разметку
+    $wrap.find("svg, img").css({
+      opacity: 0,
+      width: 0,
+      height: 0,
+      position: "absolute",
+      pointerEvents: "none"
+    });
+  });
+</script>
+
+<style>
+  /* На всякий: фиксируем кликабельную область */
+  .t706__carticon-imgwrap{
+    width: 28px; height: 28px; display:inline-block;
+  }
+  .t706__carticon{ cursor:pointer; }
+</style>

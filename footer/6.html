@@ -1,0 +1,327 @@
+<script>
+    (function () {
+        var INIT_ATTR = 'data-selfles-title-backtick-cleaner-v3';
+        var STYLE_ID = 'selfles-title-backtick-cleaner-style-v3';
+
+        if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
+        document.documentElement.setAttribute(INIT_ATTR, '1');
+
+        var rawTitleByKey = {};
+        var rawTitleByClean = {};
+        var observerStarted = false;
+        var timer = null;
+
+        function all(selector, root) {
+            return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+        }
+
+        function closest(node, selector) {
+            return node && node.closest ? node.closest(selector) : null;
+        }
+
+        function cleanSku(value) {
+            return String(value || '')
+                .replace(/^\s*(sku|артикул|арт\.?|art\.?|vendor\s+code)\s*:?\s*/i, '')
+                .trim()
+                .toUpperCase();
+        }
+
+        function stripMarkers(value) {
+            return String(value || '').replace(/`/g, '');
+        }
+
+        function normalizeTitle(value) {
+            return stripMarkers(value)
+                .replace(/\u00a0/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function hasMarkers(value) {
+            return String(value || '').indexOf('`') !== -1;
+        }
+
+        function lowerProtectedText(value) {
+            try {
+                return String(value || '').toLocaleLowerCase('ru-RU');
+            } catch (e) {
+                return String(value || '').toLowerCase();
+            }
+        }
+
+        function cleanVisibleTextFromRaw(raw) {
+            return String(raw || '').replace(/`([^`]*)`/g, function (_, protectedText) {
+                return lowerProtectedText(protectedText);
+            });
+        }
+
+        function rememberRawTitle(key, raw) {
+            key = String(key || '').trim();
+            raw = String(raw || '');
+
+            if (!key || !hasMarkers(raw)) return;
+
+            rawTitleByKey[key] = raw;
+            rawTitleByClean[normalizeTitle(raw)] = raw;
+        }
+
+        function getSkuFromRoot(root) {
+            var skuEl;
+            var value;
+
+            if (!root) return '';
+
+            value = root.getAttribute && (
+                root.getAttribute('data-product-lid') ||
+                root.getAttribute('data-product-uid') ||
+                root.getAttribute('data-product-sku') ||
+                root.getAttribute('data-sku')
+            );
+
+            if (value) return cleanSku(value);
+
+            skuEl = root.querySelector && root.querySelector(
+                '.js-product-sku, ' +
+                '.t-store__card__sku, ' +
+                '.t-store__prod-popup__sku, ' +
+                '.t-store__prod__sku'
+            );
+
+            return skuEl ? cleanSku(skuEl.textContent) : '';
+        }
+
+        function getUrlFromRoot(root) {
+            var link;
+            var value;
+
+            if (!root) return '';
+
+            value = root.getAttribute && root.getAttribute('data-product-url');
+            if (value) return value;
+
+            link = root.querySelector && root.querySelector('a[href]');
+            return link ? link.getAttribute('href') : '';
+        }
+
+        function ensureStyle() {
+            var style;
+
+            if (document.getElementById(STYLE_ID)) return;
+
+            style = document.createElement('style');
+            style.id = STYLE_ID;
+            style.textContent =
+                '.selfles-title-no-uppercase{' +
+                'text-transform:none!important;' +
+                'letter-spacing:0!important;' +
+                '}' +
+                '.t-store__card__title .selfles-title-no-uppercase,' +
+                '.js-product-name .selfles-title-no-uppercase,' +
+                '.selfles-related-card__title .selfles-title-no-uppercase{' +
+                'text-transform:none!important;' +
+                '}';
+
+            (document.head || document.documentElement).appendChild(style);
+        }
+
+        function buildTitleFragment(rawValue) {
+            var raw = String(rawValue || '');
+            var fragment = document.createDocumentFragment();
+            var regexp = /`([^`]*)`/g;
+            var lastIndex = 0;
+            var match;
+            var hasProtectedPart = false;
+
+            function appendText(value) {
+                if (!value) return;
+                fragment.appendChild(document.createTextNode(value));
+            }
+
+            function appendProtectedText(value) {
+                var span;
+
+                if (!value) return;
+
+                span = document.createElement('span');
+                span.className = 'selfles-title-no-uppercase';
+                span.textContent = lowerProtectedText(value);
+                fragment.appendChild(span);
+            }
+
+            while ((match = regexp.exec(raw)) !== null) {
+                appendText(raw.slice(lastIndex, match.index));
+                appendProtectedText(match[1]);
+                lastIndex = regexp.lastIndex;
+                hasProtectedPart = true;
+            }
+
+            appendText(raw.slice(lastIndex));
+
+            if (!hasProtectedPart) {
+                fragment.textContent = stripMarkers(raw);
+            }
+
+            return fragment;
+        }
+
+        function collectRawTitleMaps() {
+            all([
+                '.js-product.t-store__card',
+                '.t-store__card',
+                '.selfles-related-card'
+            ].join(',')).forEach(function (card) {
+                var title = card.querySelector('.js-product-name, .t-store__card__title, .selfles-related-card__title');
+                var raw = title ? (title.getAttribute('data-selfles-title-raw') || title.textContent || '') : '';
+                var sku = getSkuFromRoot(card);
+                var url = getUrlFromRoot(card);
+                var lid = card.getAttribute && (card.getAttribute('data-product-lid') || card.getAttribute('data-product-uid') || '');
+
+                if (!hasMarkers(raw)) return;
+
+                if (sku) rememberRawTitle('sku:' + sku, raw);
+                if (lid) rememberRawTitle('lid:' + lid, raw);
+                if (url) rememberRawTitle('url:' + url, raw);
+
+                rawTitleByClean[normalizeTitle(raw)] = raw;
+            });
+        }
+
+        function resolveRawTitle(el) {
+            var raw = el.getAttribute('data-selfles-title-raw') || el.textContent || '';
+            var root;
+            var sku;
+            var lid;
+            var url;
+            var clean;
+
+            if (hasMarkers(raw)) return raw;
+
+            root = closest(el, [
+                '.js-product.t-store__card',
+                '.t-store__card',
+                '.selfles-related-card',
+                '.t-store__prod-popup',
+                '.t-store__prod-snippet',
+                '.selfles-product-main-layout__info',
+                '.t-popup'
+            ].join(',')) || document;
+
+            sku = getSkuFromRoot(root);
+            if (sku && rawTitleByKey['sku:' + sku]) return rawTitleByKey['sku:' + sku];
+
+            lid = root.getAttribute && (root.getAttribute('data-product-lid') || root.getAttribute('data-product-uid'));
+            if (lid && rawTitleByKey['lid:' + lid]) return rawTitleByKey['lid:' + lid];
+
+            url = getUrlFromRoot(root);
+            if (url && rawTitleByKey['url:' + url]) return rawTitleByKey['url:' + url];
+
+            clean = normalizeTitle(el.textContent);
+            if (clean && rawTitleByClean[clean]) return rawTitleByClean[clean];
+
+            return raw;
+        }
+
+        function shouldSkipTitle(el) {
+            if (!el) return true;
+            if (closest(el, '.selfles-product-details')) return true;
+            if (closest(el, '.selfles-product-options')) return true;
+            if (closest(el, '.t706, .t-store__cart, .t-store__prod__quantity, .t-store__prod-popup__quantity')) return true;
+
+            return false;
+        }
+
+        function applyTitle(el) {
+            var raw;
+            var expected;
+
+            if (shouldSkipTitle(el)) return;
+
+            raw = resolveRawTitle(el);
+
+            if (!hasMarkers(raw)) return;
+
+            expected = cleanVisibleTextFromRaw(raw);
+
+            if (
+                el.getAttribute('data-selfles-title-raw') === raw &&
+                el.querySelector('.selfles-title-no-uppercase') &&
+                normalizeTitle(el.textContent) === normalizeTitle(expected)
+            ) {
+                return;
+            }
+
+            el.textContent = '';
+            el.appendChild(buildTitleFragment(raw));
+            el.setAttribute('data-selfles-title-raw', raw);
+        }
+
+        function applyCleaner() {
+            ensureStyle();
+            collectRawTitleMaps();
+
+            all([
+                '.js-product.t-store__card .t-store__card__title',
+                '.js-product.t-store__card .js-product-name',
+                '.t-store__card .t-store__card__title',
+                '.t-store__card .js-product-name',
+                '.selfles-related-card__title',
+
+                '.selfles-product-main-layout__info .t-store__prod__title',
+                '.selfles-product-main-layout__info .t-store__prod-popup__title',
+                '.selfles-product-main-layout__info .t-store__prod__name',
+                '.selfles-product-main-layout__info .t-store__prod-popup__name',
+                '.selfles-product-main-layout__info .js-store-prod-name',
+                '.selfles-product-main-layout__info .js-product-name',
+                '.selfles-product-main-layout__info .t-title',
+
+                '.t-store__prod-snippet h1',
+                '.t-store__prod-popup h1',
+                '.t-store__prod-snippet__title',
+                '.t-store__prod-popup__title',
+                '.t-store__prod-snippet__name',
+                '.t-store__prod-popup__name',
+                '.t-store__prod-snippet .js-store-prod-name',
+                '.t-store__prod-popup .js-store-prod-name',
+                '.t-popup .t-store__prod-popup__name',
+                '.t-popup .js-store-prod-name'
+            ].join(',')).forEach(applyTitle);
+        }
+
+        function scheduleCleaner() {
+            clearTimeout(timer);
+            timer = setTimeout(applyCleaner, 80);
+        }
+
+        function startObserver() {
+            if (observerStarted || !document.body || !('MutationObserver' in window)) return;
+
+            observerStarted = true;
+
+            new MutationObserver(scheduleCleaner).observe(document.body, {
+                childList: true,
+                subtree: true,
+                characterData: true
+            });
+        }
+
+        function boot() {
+            applyCleaner();
+            startObserver();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', boot);
+        } else {
+            boot();
+        }
+
+        window.addEventListener('load', function () {
+            boot();
+            setTimeout(boot, 300);
+            setTimeout(boot, 900);
+            setTimeout(boot, 1500);
+        });
+
+        window.selflesTitleBacktickCleaner = boot;
+    })();
+</script>

@@ -1,0 +1,71 @@
+<!-- https://t.me/code_with_you -->
+<!-- Дублирование ФИО в соответствующее поле доставки + проверка корректности ввода данных -->
+<script>
+    t_onReady(() => {
+        const inputsbox = document.querySelector('.t706 .t-form__inputsbox')
+        const inputName = inputsbox.querySelector('input[name="Name"]')
+        const tSubmit = document.querySelector('button.t-submit')
+        let userinitials
+
+        function inputValidation(input) {
+            return input.value.replace(/[^\p{L}\s]/gu, '').replace(/\s+/g, ' ')
+        }
+
+        function blurValidation(input) {
+            input.value = input.value.trim()
+
+            if (input.value.split(' ').length < 3) {
+                input.parentElement.classList.add('t-input-custom-error')
+                tSubmit.style.pointerEvents = 'none'
+                tSubmit.style.opacity = '.2'
+            } else {
+                input.parentElement.classList.remove('t-input-custom-error')
+                tSubmit.style.pointerEvents = ''
+                tSubmit.style.opacity = ''
+            }
+        }
+
+        function copyValue(userinitials) {
+            if (userinitials) {
+                userinitials.value = target.value
+            } else {
+                console.error('Не найдено поле ввода input[name="tildadelivery-userinitials"]')
+            }
+        }
+
+        inputName.addEventListener('input', (e) => {
+            const target = e.target
+
+            target.value = inputValidation(target)
+
+            copyValue(userinitials)
+        })
+
+        inputName.addEventListener('blur', (e) => {
+            const target = e.target
+
+            target.value = target.value.trim()
+
+            blurValidation(target)
+            copyValue(userinitials)
+        })
+
+        const cartObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.target.id === 'addresses-wrapper' && mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    mutation.addedNodes.forEach((node) => {
+                        const input = node.querySelector('input[name="tildadelivery-userinitials"]')
+
+                        if (input) {
+                            userinitials = input
+                            input.value = inputName.value
+                            node.style.display = 'none'
+                        }
+                    })
+                }
+            })
+        })
+
+        cartObserver.observe(inputsbox, { childList: true, subtree: true })
+    })
+</script>

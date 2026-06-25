@@ -1,0 +1,108 @@
+<!--Заполнение текста цветом-->
+<!--https://mt-webdesign.ru/link-animation-->
+<style>
+  :root {
+    --FillingColor: #EE413C; /*цвет заливки по наведению*/
+  }
+  /*Минимальная ширина экрана 480px*/
+  @media only screen and (min-width: 480px) {
+    .hover-fill-text,
+    .hover-fill-text:before {
+      opacity: 0;
+      transform: translateX(-100%);
+      transition: opacity 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) 0.2s, transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) 0.2s;
+      transition-delay: 0.7s;
+    }
+    .link-filling .tn-atom:hover .hover-fill-text,
+    .link-filling .tn-atom:hover .hover-fill-text:before {
+      opacity: 1;
+      transform: translateX(0);
+      transition-delay: 0s;
+    }
+    @keyframes anim-in-text {
+      0% {
+        transform: translateX(100%);
+      }
+      100% {
+        transform: translateX(0);
+      }
+    }
+    @keyframes anim-in-layer {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(0);
+      }
+    }
+    @keyframes anim-out-text {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-100%);
+      }
+    }
+    @keyframes anim-out-layer {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+    .link-filling {
+      pointer-events: none;
+    }
+    .link-filling a {
+      pointer-events: all;
+    }
+    .link-filling .tn-atom {
+      position: relative;
+      display: block;
+      /*overflow: hidden;*/
+    }
+    .hover-fill-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translateX(-100%);
+      display: inline-table;
+      width: 100%;
+      overflow: hidden;
+      pointer-events: none;
+      -webkit-animation: anim-out-layer 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+      animation: anim-out-layer 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    .hover-fill-text:before {
+      content: attr(data-text);
+      color: var(--FillingColor);
+      transform: translateX(100%);
+      display: inline-table;
+      text-shadow: 0px 0px 0px var(--FillingColor);
+      width: 100%;
+      -webkit-animation: anim-out-text 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+      animation: anim-out-text 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    .link-filling .tn-atom:hover .hover-fill-text {
+      transform: translateX(0);
+      -webkit-animation: anim-in-layer 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+      animation: anim-in-layer 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    .link-filling .tn-atom:hover .hover-fill-text:before {
+      -webkit-animation: anim-in-text 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+      animation: anim-in-text 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+  }
+</style>
+<!--Минимальная ширина экрана 480px-->
+<script>
+  if ($(window).width() > 480) {
+    $(document).ready(function() {
+      $('.link-filling .tn-atom').each(function(index, el) {
+        var text = $(el).text();
+        $(el).append('<span class="hover-fill-text" data-text="' + text + '"></span>');
+      });
+    });
+  }
+</script>

@@ -1,0 +1,29 @@
+<style>
+  .fixed {
+    position: fixed;
+    width: 100%;
+    top: 0px;
+    z-index: 9;
+  }
+  .transtime{transition:  all 0.4s cubic-bezier(0, 0, 0.8, 1.0)}
+</style>
+<script>
+  $(document).ready(function(){
+    let scrolldistance = 10; //Дистанция скролла
+    let blockMenuID = '#rec1556679351'; //ID Zero
+    $(blockMenuID).addClass('fixed');
+    setTimeout(function(){
+      $(blockMenuID).addClass('transtime')
+      if($(document).scrollTop()>scrolldistance){$(blockMenuID).addClass('fonmenu')};
+    }, 500);
+    $(window).scroll(function() {
+      var top = $(document).scrollTop();
+      //Если перемещение больше 10 px
+      if (top >= scrolldistance) {
+        $(blockMenuID).addClass('fonmenu');
+      } else {
+        $(blockMenuID).removeClass('fonmenu');
+      }
+    });
+  });
+</script>

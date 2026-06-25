@@ -1,0 +1,39 @@
+# JetBrains / WebStorm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# WebStorm local files
+/shelf/
+/workspace.xml
+/tasks.xml
+/usage.statistics.xml
+/dictionaries/
+/httpRequests/
+/dataSources/
+/dataSources.local.xml
+
+# Node / frontend
+node_modules/
+
+# Build / cache
+dist/
+build/
+.cache/
+.temp/
+tmp/
+coverage/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log

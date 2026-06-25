@@ -1,0 +1,433 @@
+<script>
+  (function () {
+    var INIT_ATTR = 'data-selfles-home-store-arrow-pager-v6';
+
+    if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
+    document.documentElement.setAttribute(INIT_ATTR, '1');
+
+    console.log('[SELFLES] home/catalog pager v6 loaded:', location.pathname);
+
+    var TECHNICAL_STORE_RECORD_IDS = {
+      rec2310894021: true,
+      rec2397921511: true,
+      rec1653024161: true,
+      rec1556696391: true
+    };
+
+    function getPath() {
+      var path = location.pathname.replace(/\/+$/, '');
+      return path || '/';
+    }
+
+    function getPageAlias() {
+      var allrecords = document.querySelector('#allrecords');
+      return allrecords ? String(allrecords.getAttribute('data-tilda-page-alias') || '') : '';
+    }
+
+    function isHomePage() {
+      var path = getPath();
+
+      return path === '/' ||
+              path === '/page94832776.html';
+    }
+
+    function isCatalogPage() {
+      return getPath() === '/catalog' || getPageAlias() === 'catalog';
+    }
+
+    function all(selector, root) {
+      return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+    }
+
+    function renameCatalogLoadMore() {
+      if (!isCatalogPage()) return;
+
+      all('.js-store-load-more-btn-text').forEach(function (node) {
+        if (/load\s*more/i.test(node.textContent || '')) {
+          node.textContent = 'ещё';
+        }
+      });
+
+      all('template[id^="button_loadmore_"]').forEach(function (tpl) {
+        if (tpl.innerHTML && /Load\s*more/i.test(tpl.innerHTML)) {
+          tpl.innerHTML = tpl.innerHTML.replace(/Load\s*more/gi, 'ещё');
+        }
+      });
+    }
+
+    function isRecordVisible(rec) {
+      if (!rec || !window.getComputedStyle) return true;
+
+      var style = window.getComputedStyle(rec);
+      var rect = rec.getBoundingClientRect();
+
+      return style.display !== 'none' &&
+              style.visibility !== 'hidden' &&
+              rect.width > 0 &&
+              rect.height > 0;
+    }
+
+    function isTechnicalStoreRecord(rec) {
+      return !!(rec && TECHNICAL_STORE_RECORD_IDS[rec.id]);
+    }
+
+    function getGrid(rec) {
+      var grids = all('.js-store-grid-cont', rec).filter(function (grid) {
+        return !grid.classList.contains('js-store-grid-cont-preloader') &&
+                !grid.classList.contains('js-store-parts-select-container');
+      });
+
+      return grids.find(function (grid) {
+        return !!grid.querySelector('.t-store__card-list, .js-product.t-store__card, .t-store__card');
+      }) || grids[0] || null;
+    }
+
+    function absorbLooseTrackNodes(grid, track) {
+      if (!grid || !track) return;
+
+      Array.prototype.slice.call(grid.children).forEach(function (node) {
+        if (node === track) return;
+        if (!node.matches) return;
+
+        if (node.matches('.js-product.t-store__card, .t-store__card, .t-clear, .t-store__grid-separator')) {
+          track.appendChild(node);
+        }
+      });
+    }
+
+    function getTrack(grid) {
+      var track;
+      var directNodes;
+
+      if (!grid) return null;
+
+      track = grid.querySelector('.t-store__card-list');
+
+      if (track) {
+        absorbLooseTrackNodes(grid, track);
+        return track;
+      }
+
+      directNodes = Array.prototype.slice.call(grid.children).filter(function (node) {
+        return node.matches &&
+                node.matches('.js-product.t-store__card, .t-store__card, .t-clear, .t-store__grid-separator');
+      });
+
+      if (!directNodes.length) return null;
+
+      track = document.createElement('div');
+      track.className = 't-store__card-list';
+
+      grid.insertBefore(track, directNodes[0]);
+
+      directNodes.forEach(function (node) {
+        track.appendChild(node);
+      });
+
+      return track;
+    }
+
+    function getCards(track) {
+      if (!track) return [];
+
+      return Array.prototype.slice.call(track.children).filter(function (node) {
+        return node.matches &&
+                node.matches('.js-product.t-store__card, .t-store__card') &&
+                !node.classList.contains('js-product-relevant');
+      });
+    }
+
+    function getPerView() {
+      return window.matchMedia && window.matchMedia('(max-width: 640px)').matches ? 2 : 3;
+    }
+
+    function getLoadMoreButton(rec) {
+      return rec.querySelector('.js-store-load-more-btn, .t-store__load-more-btn');
+    }
+
+    function getLoadMoreWrap(rec) {
+      return rec.querySelector('.t-store__load-more-btn-wrap, .js-store-load-more-btn-wrap');
+    }
+
+    function isInlineHidden(el) {
+      if (!el) return false;
+
+      return String(el.style.display || '').toLowerCase() === 'none' ||
+              String(el.style.visibility || '').toLowerCase() === 'hidden' ||
+              el.classList.contains('t-store__load-more-btn_hidden');
+    }
+
+    function canClickLoadMore(rec) {
+      var btn = getLoadMoreButton(rec);
+      var wrap = getLoadMoreWrap(rec);
+
+      if (!btn || btn.disabled) return false;
+      if (isInlineHidden(btn) || isInlineHidden(wrap)) return false;
+
+      return true;
+    }
+
+    function waitForCardChange(rec, grid, track, beforeCount, done) {
+      var started = Date.now();
+
+      function check() {
+        absorbLooseTrackNodes(grid, track);
+
+        var currentCount = getCards(track).length;
+
+        if (
+                currentCount > beforeCount ||
+                !canClickLoadMore(rec) ||
+                Date.now() - started > 2500
+        ) {
+          done();
+          return;
+        }
+
+        setTimeout(check, 100);
+      }
+
+      check();
+    }
+
+    function createArrow(type) {
+      var button = document.createElement('button');
+
+      button.type = 'button';
+      button.className = 'selfles-home-store-arrow selfles-home-store-arrow_' + type;
+      button.setAttribute('aria-label', type === 'next' ? 'Следующие товары' : 'Предыдущие товары');
+
+      return button;
+    }
+
+    function resetPagerState(rec, grid, track) {
+      all('.selfles-home-store-arrow', rec).forEach(function (node) {
+        node.remove();
+      });
+
+      rec.classList.remove('selfles-home-store-ready');
+      rec.removeAttribute('data-selfles-home-store-ready');
+      rec.removeAttribute('data-selfles-home-store-pager-ready-v6');
+
+      if (grid) {
+        grid.classList.remove('selfles-home-store-viewport');
+      }
+
+      if (track) {
+        track.classList.remove('selfles-home-store-track');
+        track.style.removeProperty('transform');
+      }
+    }
+
+    function finalizePager(rec, grid, track) {
+      var prev;
+      var next;
+      var state = {
+        index: 0,
+        resizeTimer: null,
+        loading: false
+      };
+
+      if (!grid || !track) return;
+      if (rec.getAttribute('data-selfles-home-store-pager-ready-v6') === '1') return;
+
+      rec.setAttribute('data-selfles-home-store-pager-ready-v6', '1');
+      rec.setAttribute('data-selfles-home-store-ready', '1');
+      rec.classList.add('selfles-home-store-ready');
+
+      grid.classList.add('selfles-home-store-viewport');
+      track.classList.add('selfles-home-store-track');
+
+      prev = createArrow('prev');
+      next = createArrow('next');
+
+      grid.appendChild(prev);
+      grid.appendChild(next);
+
+      function refresh() {
+        absorbLooseTrackNodes(grid, track);
+
+        var perView = getPerView();
+        var cards = getCards(track);
+        var hasMore = canClickLoadMore(rec);
+        var maxIndex = Math.max(0, cards.length - perView);
+        var offset = 0;
+
+        if (!cards.length) return;
+
+        rec.setAttribute('data-selfles-home-store-card-count', String(cards.length));
+        track.setAttribute('data-selfles-home-store-card-count', String(cards.length));
+
+        if (cards.length <= perView && !hasMore) {
+          state.index = 0;
+
+          track.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
+          track.style.setProperty('justify-content', 'center', 'important');
+
+          prev.style.display = 'none';
+          next.style.display = 'none';
+          prev.disabled = true;
+          next.disabled = true;
+          next.classList.remove('is-loading');
+          next.setAttribute('aria-busy', 'false');
+
+          return;
+        }
+
+        track.style.removeProperty('justify-content');
+
+        if (state.index > maxIndex) {
+          state.index = maxIndex;
+        }
+
+        offset = cards[state.index]
+                ? cards[state.index].offsetLeft - cards[0].offsetLeft
+                : 0;
+
+        track.style.setProperty('transform', 'translate3d(' + (-offset) + 'px, 0, 0)', 'important');
+
+        prev.disabled = state.index <= 0;
+        next.classList.toggle('is-loading', !!state.loading);
+        next.setAttribute('aria-busy', state.loading ? 'true' : 'false');
+        next.disabled = !state.loading && state.index >= maxIndex && !hasMore;
+
+        prev.style.display = '';
+        next.style.display = '';
+      }
+
+      function go(direction) {
+        var perView = getPerView();
+        var cards = getCards(track);
+        var maxIndex = Math.max(0, cards.length - perView);
+        var btn;
+        var beforeCount;
+
+        if (state.loading) return;
+
+        if (direction > 0 && state.index >= maxIndex && canClickLoadMore(rec)) {
+          btn = getLoadMoreButton(rec);
+          beforeCount = cards.length;
+          state.loading = true;
+          refresh();
+
+          btn.click();
+
+          waitForCardChange(rec, grid, track, beforeCount, function () {
+            state.loading = false;
+            cards = getCards(track);
+            maxIndex = Math.max(0, cards.length - perView);
+            state.index = Math.min(state.index + perView, maxIndex);
+            refresh();
+          });
+
+          return;
+        }
+
+        if (direction > 0) {
+          state.index = Math.min(state.index + perView, maxIndex);
+        } else {
+          state.index = Math.max(state.index - perView, 0);
+        }
+
+        refresh();
+      }
+
+      prev.addEventListener('click', function () {
+        go(-1);
+      });
+
+      next.addEventListener('click', function () {
+        go(1);
+      });
+
+      window.addEventListener('resize', function () {
+        clearTimeout(state.resizeTimer);
+        state.resizeTimer = setTimeout(refresh, 120);
+      });
+
+      refresh();
+      setTimeout(refresh, 300);
+      setTimeout(refresh, 900);
+    }
+
+    function setupStoreRecord(rec) {
+      var grid;
+      var track;
+      var cards;
+
+      if (!rec) return;
+      if (isTechnicalStoreRecord(rec)) return;
+      if (!isRecordVisible(rec)) return;
+      if (rec.getAttribute('data-selfles-home-store-pager-loading-v6') === '1') return;
+      if (rec.getAttribute('data-selfles-home-store-pager-ready-v6') === '1') return;
+
+      grid = getGrid(rec);
+      track = getTrack(grid);
+      cards = getCards(track);
+
+      if (!grid || !track || !cards.length) return;
+
+      rec.setAttribute('data-selfles-home-store-pager-loading-v6', '1');
+
+      resetPagerState(rec, grid, track);
+
+      rec.removeAttribute('data-selfles-home-store-pager-loading-v6');
+
+      grid = getGrid(rec);
+      track = getTrack(grid);
+
+      if (!grid || !track || !getCards(track).length) return;
+
+      finalizePager(rec, grid, track);
+    }
+
+    function setupHomeArrows() {
+      if (!isHomePage()) return;
+
+      document.body.classList.add('selfles-home-store-arrows-page');
+
+      all('.t-rec').forEach(function (rec) {
+        if (
+                rec.querySelector('.t-store, .js-store') &&
+                rec.querySelector('.js-store-grid-cont')
+        ) {
+          setupStoreRecord(rec);
+        }
+      });
+    }
+
+    function run() {
+      renameCatalogLoadMore();
+      setupHomeArrows();
+    }
+
+    function scheduleRun() {
+      clearTimeout(scheduleRun.timer);
+      scheduleRun.timer = setTimeout(run, 150);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', run);
+    } else {
+      run();
+    }
+
+    window.addEventListener('load', function () {
+      run();
+      setTimeout(run, 500);
+      setTimeout(run, 1500);
+      setTimeout(run, 3000);
+    });
+
+    window.addEventListener('resize', function () {
+      setTimeout(run, 200);
+    });
+
+    if ('MutationObserver' in window && document.body) {
+      new MutationObserver(scheduleRun).observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    }
+  })();
+</script>

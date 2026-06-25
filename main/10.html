@@ -1,0 +1,73 @@
+<style>
+  .fixed-zb-elem{
+    position: fixed !important;
+    right: 40px !important;
+    bottom: 30px !important;
+    top: auto !important;
+    left: auto !important;
+    z-index: 999999 !important;
+    transform: none !important;
+  }
+  @media (max-width: 480px){
+    .fixed-zb-elem{ right: 10px !important; bottom: 20px !important;}
+  }
+</style>
+
+<script>
+  (function () {
+    function init() {
+      var btnRec = document.querySelector('#rec1839960541');   // блок с кнопкой
+      var footerRec = document.querySelector('#rec1839679261'); // футер
+
+      if (!btnRec || !footerRec) return false;
+
+      // ВАЖНО: выбираем именно тот tn-elem, который ты уже фиксировала (со ссылкой)
+      // Если у тебя в прошлый раз был data-elem-id — лучше подставить его сюда (самый надежный вариант).
+      var btnElem =
+              btnRec.querySelector('.tn-elem.fixed-zb-elem') ||
+              btnRec.querySelector('.tn-elem:has(a), .tn-elem:has(.tn-atom[href]), .tn-elem:has(.tn-atom a)');
+
+      if (!btnElem) return false;
+
+      // если фикс-класс навешивался другим кодом — подстрахуемся
+      btnElem.classList.add('fixed-zb-elem');
+
+      // --- Скрывать, когда футер виден ---
+      if ('IntersectionObserver' in window) {
+        var obs = new IntersectionObserver(function(entries){
+          entries.forEach(function(entry){
+            // как только футер появляется в зоне видимости — прячем кнопку
+            btnElem.style.display = entry.isIntersecting ? 'none' : '';
+          });
+        }, {
+          root: null,
+          threshold: 0.01
+        });
+
+        obs.observe(footerRec);
+      } else {
+        // fallback без IntersectionObserver
+        function onScroll(){
+          var footerTop = footerRec.getBoundingClientRect().top;
+          var winH = window.innerHeight || document.documentElement.clientHeight;
+          btnElem.style.display = (footerTop <= winH) ? 'none' : '';
+        }
+        onScroll();
+        window.addEventListener('scroll', onScroll);
+        window.addEventListener('resize', onScroll);
+      }
+
+      return true;
+    }
+
+    // ждём, пока Tilda всё отрендерит
+    var tries = 0;
+    var t = setInterval(function () {
+      tries++;
+      if (init() || tries > 100) clearInterval(t);
+    }, 200);
+
+    // доп. страховка на load
+    window.addEventListener('load', init);
+  })();
+</script>
