@@ -1271,10 +1271,21 @@
         }
 
         function goToVariant(item) {
+            var url;
+            var normalize = window.selflesNormalizeProductUrl;
+
             if (!item || !item.url) return;
 
-            if (location.href !== item.url) {
-                location.href = item.url;
+            url = typeof normalize === 'function' ? normalize(item.url) : item.url;
+
+            if (!url) return;
+
+            try {
+                if (location.pathname.replace(/\/+$/, '') !== new URL(url, location.href).pathname.replace(/\/+$/, '')) {
+                    location.assign(url);
+                }
+            } catch (e) {
+                location.assign(url);
             }
         }
 

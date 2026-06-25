@@ -60,12 +60,17 @@
 
             path = url.pathname.replace(/\/+$/, '');
 
+            /*
+              Важно: рабочий канонический путь товара сейчас /tproduct/...
+              /catalog/tproduct/... оставляем только как входящий алиас,
+              но для переходов всегда возвращаем /tproduct/...
+            */
             if (path.indexOf('/catalog/tproduct/') !== -1) {
-                return path + url.search + url.hash;
+                return path.replace('/catalog/tproduct/', '/tproduct/') + url.search + url.hash;
             }
 
             if (path.indexOf('/tproduct/') !== -1) {
-                return path.replace('/tproduct/', '/catalog/tproduct/') + url.search + url.hash;
+                return path + url.search + url.hash;
             }
 
             if (path.indexOf('/product/') !== -1) {
@@ -74,6 +79,10 @@
 
             return '';
         }
+
+        try {
+            window.selflesNormalizeProductUrl = normalizeProductUrl;
+        } catch (e) {}
 
         function isProductUrl(value) {
             return !!normalizeProductUrl(value);
@@ -954,7 +963,17 @@
                 card.setAttribute('data-product-url', url);
 
                 all('a[href]', card).forEach(function (a) {
+                    if (closest(a, [
+                        '.t-store__prod-popup__btn',
+                        '.t-store__prod__btn',
+                        '.js-store-prod-popup-buy-btn',
+                        '.selfles-product-buy-button-fixed'
+                    ].join(','))) {
+                        return;
+                    }
+
                     if (!normalizeProductUrl(a.getAttribute('href') || a.href)) return;
+
                     a.setAttribute('href', url);
                     a.removeAttribute('target');
                 });
@@ -962,6 +981,7 @@
         }
 
         function applyFixes() {
+            renameCatalogLoadMore();
             repairProductLinks(document);
             getProductRoots().forEach(fixProductRoot);
             styleButtons(document);
@@ -973,14 +993,62 @@
             applyTimer = setTimeout(applyFixes, 50);
         }
 
+        function getPageAlias() {
+            var allrecords = document.querySelector('#allrecords');
+            return allrecords ? String(allrecords.getAttribute('data-tilda-page-alias') || '') : '';
+        }
+
+        function isCatalogPage() {
+            return getPath(location.href) === '/catalog' || getPageAlias() === 'catalog';
+        }
+
+        function renameCatalogLoadMore() {
+            if (!isCatalogPage()) return;
+
+            all('.js-store-load-more-btn-text').forEach(function (node) {
+                if (/load\s*more/i.test(node.textContent || '')) {
+                    node.textContent = 'ещё';
+                }
+            });
+
+            all('template[id^="button_loadmore_"]').forEach(function (tpl) {
+                if (tpl.innerHTML && /Load\s*more/i.test(tpl.innerHTML)) {
+                    tpl.innerHTML = tpl.innerHTML.replace(/Load\s*more/gi, 'ещё');
+                }
+            });
+        }
+
         ['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(function (eventName) {
             window.addEventListener(eventName, handleProductOpen, true);
             document.addEventListener(eventName, handleProductOpen, true);
         });
 
+        function handleBuyButtonDefault(event) {
+            var button;
+
+            if (!event || !event.target) return;
+
+            button = closest(event.target, [
+                '.selfles-buy-zone .t-store__prod-popup__btn',
+                '.selfles-buy-zone .t-store__prod__btn',
+                '.selfles-buy-zone .js-store-prod-popup-buy-btn',
+                '.selfles-buy-zone .selfles-product-buy-button-fixed'
+            ].join(','));
+
+            if (!button) return;
+            if (!isProductPage()) return;
+
+            /*
+              Не стопаем событие, чтобы родной обработчик Тильды успел добавить товар в корзину.
+              Только запрещаем браузеру перейти по href, если Тильда не сделала preventDefault сама.
+            */
+            event.preventDefault();
+        }
+
         window.addEventListener('click', handleProductClose, true);
         document.addEventListener('click', handleProductClose, true);
         document.addEventListener('click', handleProductTabClick, true);
+        document.addEventListener('click', handleBuyButtonDefault, false);
         document.addEventListener('keydown', function (event) {
             var button;
 
