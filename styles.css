@@ -3791,6 +3791,7 @@ body.selfles-product-page .selfles-buy-zone .t-btn {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     padding-top: 0 !important;
+    font-family: 'Selfles Oswald Medium' !important;
 }
 
 /* ===== SELFLES: stable product tabs accordion ===== */
@@ -3943,9 +3944,4 @@ body.selfles-product-page .selfles-buy-zone .t-store__prod__quantity-input {
     height: 26px !important;
     min-height: 26px !important;
     line-height: 26px !important;
-}
-
-.t-store__relevants__title{
-    font-family: 'Selfles Oswald Medium' !important;
-    margin-top: 0px !important;
 }
