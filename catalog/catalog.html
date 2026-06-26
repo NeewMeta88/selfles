@@ -195,40 +195,6 @@
         'body.selfles-product-page .t-store__product-snippet {',
         '  padding-bottom: 0 !important;',
         '  margin-bottom: 0 !important;',
-        '}',
-        'body.selfles-product-page .t-store__relevants,',
-        'body.selfles-product-page .selfles-related-fallback {',
-        '  margin-top: 0 !important;',
-        '  padding-top: 0 !important;',
-        '}',
-        'body.selfles-product-page .t-store__relevants__title,',
-        'body.selfles-product-page .selfles-related-fallback .t-store__relevants__title {',
-        '  margin-top: 0 !important;',
-        '  padding-top: 0 !important;',
-        '  font-family: "Selfles Oswald Medium", "Inter", "Oswald", Arial, sans-serif !important;',
-        '  font-style: normal !important;',
-        '  font-weight: 500 !important;',
-        '  margin-bottom: 24px !important;',
-        '}',
-        '@media screen and (max-width: 960px) {',
-        '  body.selfles-product-page .t-store__relevants,',
-        '  body.selfles-product-page .selfles-related-fallback {',
-        '    padding-top: 0 !important;',
-        '  }',
-        '  body.selfles-product-page .t-store__relevants__title,',
-        '  body.selfles-product-page .selfles-related-fallback .t-store__relevants__title {',
-        '    margin-bottom: 16px !important;',
-        '  }',
-        '}',
-        '@media screen and (max-width: 479px) {',
-        '  body.selfles-product-page .t-store__relevants,',
-        '  body.selfles-product-page .selfles-related-fallback {',
-        '    padding-top: 0 !important;',
-        '  }',
-        '  body.selfles-product-page .t-store__relevants__title,',
-        '  body.selfles-product-page .selfles-related-fallback .t-store__relevants__title {',
-        '    margin-bottom: 14px !important;',
-        '  }',
         '}'
       ].join('\n');
 
@@ -236,6 +202,35 @@
       style.id = id;
       style.textContent = css;
       document.head.appendChild(style);
+    }
+
+    function ensureSelflesProductMainLayoutRoot() {
+      if (!isProductPage()) return;
+
+      all('.selfles-product-main-layout__gallery').forEach(function (gallery) {
+        var parent;
+        var info;
+
+        if (!gallery) return;
+
+        parent = gallery.parentElement;
+        if (!parent) return;
+
+        info = parent.querySelector(':scope > .selfles-product-main-layout__info');
+
+        if (!info && gallery.nextElementSibling && gallery.nextElementSibling.classList.contains('selfles-product-main-layout__info')) {
+          info = gallery.nextElementSibling;
+        }
+
+        if (!info) return;
+
+        parent.classList.add('selfles-product-main-layout');
+        parent.classList.add('selfles-product-layout-root');
+
+        if (parent.classList.contains('t-container') && !parent.classList.contains('t-container_fluid')) {
+          parent.classList.add('t-container_fluid');
+        }
+      });
     }
 
     function applySelflesLoadMoreText() {
@@ -253,6 +248,7 @@
     }
 
     function applySelflesCatalogUiFixes() {
+      ensureSelflesProductMainLayoutRoot();
       injectSelflesProductMobileBuyStyle();
       applySelflesLoadMoreText();
     }
