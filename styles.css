@@ -4105,3 +4105,95 @@ body.selfles-product-page .selfles-product-main-layout__info .t-store__tabs__ite
         visibility: visible !important;
     }
 }
+
+@media screen and (max-width: 960px) {
+    body.selfles-main-catalog-rows-page .selfles-main-store-track[data-selfles-single-card="1"]::after,
+    body.selfles-main-catalog-rows-page .selfles-main-store-track[data-selfles-single-card="1"]:after {
+        content: none !important;
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        height: 0 !important;
+        flex: 0 0 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    body.selfles-main-catalog-rows-page .selfles-main-store-track[data-selfles-single-card="1"] {
+        justify-content: center !important;
+        transform: translate3d(0, 0, 0) !important;
+    }
+
+    body.selfles-main-catalog-rows-page .selfles-main-store-track[data-selfles-single-card="1"] > .js-product.t-store__card:not(.js-product-relevant),
+    body.selfles-main-catalog-rows-page .selfles-main-store-track[data-selfles-single-card="1"] > .t-store__card:not(.js-product-relevant) {
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+}
+
+@media screen and (max-width: 1200px) {
+    body.selfles-main-catalog-rows-page #allrecords .t-store__card__imgwrapper,
+    body.selfles-main-catalog-rows-page #allrecords .t-store__card__imgwrapper_1-1,
+    body.selfles-main-catalog-rows-page #allrecords .t-store__card__imgwrapper_1-1-padding {
+        position: relative !important;
+        overflow: hidden !important;
+    }
+
+    body.selfles-main-catalog-rows-page #allrecords .t-store__card__bgimg_second {
+        display: block !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        opacity: 0 !important;
+        visibility: visible !important;
+        pointer-events: none !important;
+        z-index: 2 !important;
+        transition: opacity .25s ease !important;
+    }
+
+    body.selfles-main-catalog-rows-page #allrecords .t-store__card:hover .t-store__card__bgimg_second,
+    body.selfles-main-catalog-rows-page #allrecords .js-product:hover .t-store__card__bgimg_second {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+}
+
+body.selfles-main-catalog-rows-page .selfles-main-store-arrow {
+    padding: 0 !important;
+}
+
+body.selfles-main-catalog-rows-page .selfles-main-store-arrow::before {
+    content: "" !important;
+    display: block !important;
+    width: 30px !important;
+    height: 30px !important;
+    background: #ee413c !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Cpath d='M10.4142136,5 L11.8284271,6.41421356 L5.829,12.414 L23.4142136,12.4142136 L23.4142136,14.4142136 L5.829,14.414 L11.8284271,20.4142136 L10.4142136,21.8284271 L2,13.4142136 L10.4142136,5 Z' fill='%23000'/%3E%3C/svg%3E") !important;
+    -webkit-mask-repeat: no-repeat !important;
+    -webkit-mask-position: center !important;
+    -webkit-mask-size: contain !important;
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Cpath d='M10.4142136,5 L11.8284271,6.41421356 L5.829,12.414 L23.4142136,12.4142136 L23.4142136,14.4142136 L5.829,14.414 L11.8284271,20.4142136 L10.4142136,21.8284271 L2,13.4142136 L10.4142136,5 Z' fill='%23000'/%3E%3C/svg%3E") !important;
+    mask-repeat: no-repeat !important;
+    mask-position: center !important;
+    mask-size: contain !important;
+}
+
+body.selfles-main-catalog-rows-page .selfles-main-store-arrow_prev::before {
+    transform: none !important;
+}
+
+body.selfles-main-catalog-rows-page .selfles-main-store-arrow_next::before {
+    transform: rotate(180deg) !important;
+}
+
+@media screen and (max-width: 640px) {
+    body.selfles-main-catalog-rows-page .selfles-main-store-arrow::before {
+        width: 25px !important;
+        height: 25px !important;
+    }
+}
