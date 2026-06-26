@@ -369,7 +369,8 @@
             var text = String(value || '')
                 .replace(/\u00a0/g, ' ')
                 .replace(/\r/g, '')
-                .replace(/([.!?])(?=[А-ЯЁA-Z])/g, '$1\n')
+                .replace(/([^\n])\s*(–\s+)/g, '$1\n$2')
+                .replace(/([.!?)])(?=[А-ЯЁA-Z])/g, '$1\n')
                 .trim();
 
             return text.split(/\n+/)
