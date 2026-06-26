@@ -1,6 +1,9 @@
 <script>
   (function () {
-    var INIT_ATTR = 'data-selfles-home-store-arrow-pager-v7';
+    var INIT_ATTR = 'data-selfles-home-store-arrow-pager-v8';
+    var STYLE_ID = 'selfles-home-store-arrow-pager-style-v8';
+    var READY_ATTR = 'data-selfles-home-store-pager-ready-v8';
+    var LOADING_ATTR = 'data-selfles-home-store-pager-loading-v8';
 
     if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
     document.documentElement.setAttribute(INIT_ATTR, '1');
@@ -35,20 +38,32 @@
       return path || '/';
     }
 
+    function getAllRecords() {
+      return document.querySelector('#allrecords');
+    }
+
     function getPageAlias() {
-      var allrecords = document.querySelector('#allrecords');
+      var allrecords = getAllRecords();
       return allrecords ? String(allrecords.getAttribute('data-tilda-page-alias') || '') : '';
+    }
+
+    function getPageId() {
+      var allrecords = getAllRecords();
+      return allrecords ? String(allrecords.getAttribute('data-tilda-page-id') || '') : '';
     }
 
     function isHomePage() {
       var path = getPath();
       var alias = getPageAlias();
+      var pageId = getPageId();
 
       return path === '/' ||
-              path === '/page94832776.html' ||
-              alias === 'main' ||
-              alias === 'home' ||
-              alias === 'index';
+        path === '/page94832776.html' ||
+        alias === 'main' ||
+        alias === 'home' ||
+        alias === 'index' ||
+        pageId === '94832776' ||
+        !!(document.body && document.body.classList.contains('selfles-main-catalog-rows-page'));
     }
 
     function isCatalogPage() {
@@ -64,16 +79,19 @@
     }
 
     function injectHomeArrowStyles() {
-      var id = 'selfles-home-store-arrow-pager-style-v7';
       var style;
 
-      if (document.getElementById(id)) return;
+      if (document.getElementById(STYLE_ID)) return;
 
       style = document.createElement('style');
-      style.id = id;
+      style.id = STYLE_ID;
       style.textContent = [
+        'html.selfles-home-store-arrows-page .t-store__load-more-btn-wrap,',
+        'html.selfles-home-store-arrows-page .js-store-load-more-btn-wrap,',
         'body.selfles-home-store-arrows-page .t-store__load-more-btn-wrap,',
-        'body.selfles-home-store-arrows-page .js-store-load-more-btn-wrap {',
+        'body.selfles-home-store-arrows-page .js-store-load-more-btn-wrap,',
+        'body.selfles-main-catalog-rows-page .t-store__load-more-btn-wrap,',
+        'body.selfles-main-catalog-rows-page .js-store-load-more-btn-wrap {',
         '  position: absolute !important;',
         '  width: 1px !important;',
         '  height: 1px !important;',
@@ -89,22 +107,32 @@
         '  clip: rect(0 0 0 0) !important;',
         '  clip-path: inset(50%) !important;',
         '}',
-        'body.selfles-home-store-arrows-page .selfles-home-store-viewport {',
+        'html.selfles-home-store-arrows-page .selfles-home-store-viewport,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-viewport,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-viewport {',
         '  position: relative !important;',
         '  overflow: hidden !important;',
         '}',
-        'body.selfles-home-store-arrows-page .selfles-home-store-track {',
+        'html.selfles-home-store-arrows-page .selfles-home-store-track,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-track,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-track {',
         '  display: flex !important;',
         '  flex-wrap: nowrap !important;',
         '  align-items: flex-start !important;',
         '  will-change: transform !important;',
         '  transition: transform .28s ease !important;',
         '}',
+        'html.selfles-home-store-arrows-page .selfles-home-store-track > .t-clear,',
+        'html.selfles-home-store-arrows-page .selfles-home-store-track > .t-store__grid-separator,',
         'body.selfles-home-store-arrows-page .selfles-home-store-track > .t-clear,',
-        'body.selfles-home-store-arrows-page .selfles-home-store-track > .t-store__grid-separator {',
+        'body.selfles-home-store-arrows-page .selfles-home-store-track > .t-store__grid-separator,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-track > .t-clear,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-track > .t-store__grid-separator {',
         '  display: none !important;',
         '}',
-        'body.selfles-home-store-arrows-page .selfles-home-store-arrow {',
+        'html.selfles-home-store-arrows-page .selfles-home-store-arrow,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-arrow {',
         '  position: absolute !important;',
         '  top: 50% !important;',
         '  z-index: 50 !important;',
@@ -127,9 +155,15 @@
         '  appearance: none !important;',
         '  -webkit-appearance: none !important;',
         '}',
-        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_prev { left: 16px !important; }',
-        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_next { right: 16px !important; }',
-        'body.selfles-home-store-arrows-page .selfles-home-store-arrow::before {',
+        'html.selfles-home-store-arrows-page .selfles-home-store-arrow_prev,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_prev,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-arrow_prev { left: 16px !important; }',
+        'html.selfles-home-store-arrows-page .selfles-home-store-arrow_next,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_next,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-arrow_next { right: 16px !important; }',
+        'html.selfles-home-store-arrows-page .selfles-home-store-arrow::before,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow::before,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-arrow::before {',
         '  display: block !important;',
         '  font-family: Arial, sans-serif !important;',
         '  font-size: 54px !important;',
@@ -137,15 +171,25 @@
         '  font-weight: 400 !important;',
         '  color: #EE413C !important;',
         '}',
-        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_prev::before { content: "\\2190" !important; }',
-        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_next::before { content: "\\2192" !important; }',
-        'body.selfles-home-store-arrows-page .selfles-home-store-arrow:disabled {',
+        'html.selfles-home-store-arrows-page .selfles-home-store-arrow_prev::before,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_prev::before,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-arrow_prev::before { content: "\\2190" !important; }',
+        'html.selfles-home-store-arrows-page .selfles-home-store-arrow_next::before,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_next::before,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-arrow_next::before { content: "\\2192" !important; }',
+        'html.selfles-home-store-arrows-page .selfles-home-store-arrow:disabled,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow:disabled,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-arrow:disabled {',
         '  opacity: .28 !important;',
         '  cursor: default !important;',
         '  pointer-events: none !important;',
         '}',
-        'body.selfles-home-store-arrows-page .selfles-home-store-arrow.is-loading::before { opacity: 0 !important; }',
-        'body.selfles-home-store-arrows-page .selfles-home-store-arrow.is-loading::after {',
+        'html.selfles-home-store-arrows-page .selfles-home-store-arrow.is-loading::before,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow.is-loading::before,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-arrow.is-loading::before { opacity: 0 !important; }',
+        'html.selfles-home-store-arrows-page .selfles-home-store-arrow.is-loading::after,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow.is-loading::after,',
+        'body.selfles-main-catalog-rows-page .selfles-home-store-arrow.is-loading::after {',
         '  content: "" !important;',
         '  position: absolute !important;',
         '  left: 50% !important;',
@@ -160,19 +204,29 @@
         '}',
         '@keyframes selflesHomeArrowSpin { to { transform: rotate(360deg); } }',
         '@media screen and (max-width: 1200px) {',
-        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow {',
+        '  html.selfles-home-store-arrows-page .selfles-home-store-arrow,',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow,',
+        '  body.selfles-main-catalog-rows-page .selfles-home-store-arrow {',
         '    width: 56px !important;',
         '    height: 56px !important;',
         '    min-width: 56px !important;',
         '    min-height: 56px !important;',
         '    padding-bottom: 5px !important;',
         '  }',
-        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow::before { font-size: 42px !important; }',
-        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow_prev { left: 10px !important; }',
-        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow_next { right: 10px !important; }',
+        '  html.selfles-home-store-arrows-page .selfles-home-store-arrow::before,',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow::before,',
+        '  body.selfles-main-catalog-rows-page .selfles-home-store-arrow::before { font-size: 42px !important; }',
+        '  html.selfles-home-store-arrows-page .selfles-home-store-arrow_prev,',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow_prev,',
+        '  body.selfles-main-catalog-rows-page .selfles-home-store-arrow_prev { left: 10px !important; }',
+        '  html.selfles-home-store-arrows-page .selfles-home-store-arrow_next,',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow_next,',
+        '  body.selfles-main-catalog-rows-page .selfles-home-store-arrow_next { right: 10px !important; }',
         '}',
         '@media screen and (max-width: 640px) {',
-        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow {',
+        '  html.selfles-home-store-arrows-page .selfles-home-store-arrow,',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow,',
+        '  body.selfles-main-catalog-rows-page .selfles-home-store-arrow {',
         '    width: 44px !important;',
         '    height: 44px !important;',
         '    min-width: 44px !important;',
@@ -180,7 +234,9 @@
         '    border-width: 1.5px !important;',
         '    padding-bottom: 4px !important;',
         '  }',
-        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow::before { font-size: 34px !important; }',
+        '  html.selfles-home-store-arrows-page .selfles-home-store-arrow::before,',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow::before,',
+        '  body.selfles-main-catalog-rows-page .selfles-home-store-arrow::before { font-size: 34px !important; }',
         '}'
       ].join('\n');
 
@@ -220,6 +276,9 @@
       match = sku.match(/^P(?:160|180|KS|EUR)([PGCBSW])-?/);
       if (match) return {sku: sku, type: 'sheet', color: COLOR_BY_CODE[match[1]] || ''};
 
+      match = sku.match(/^PKS([PGCBSW])-?/);
+      if (match) return {sku: sku, type: 'sheet', color: COLOR_BY_CODE[match[1]] || ''};
+
       return null;
     }
 
@@ -257,20 +316,9 @@
         if (value && !/^\d+$/.test(value) && parseSku(value)) return value;
       }
 
-      match = String(card.textContent || '').toUpperCase().match(/\b(?:N[PGCBSW]-?BAM\d+|P(?:160|180|KS|EUR)[PGCBSW]-?BAM\d+|PP(?:150|180|220)?[PGCBSW]-?BAM\d+)\b/);
+      match = String(card.textContent || '').toUpperCase().match(/\b(?:N[PGCBSW]-?BAM\d+|P(?:160|180|KS|EUR)[PGCBSW]-?BAM\d+|PKS[PGCBSW]-?BAM\d+|PP(?:150|180|220)?[PGCBSW]-?BAM\d+)\b/);
 
       return match ? normalizeSku(match[0]) : '';
-    }
-
-    function isColorTitleCard(card) {
-      var parsed = parseSku(skuFromCard(card));
-
-      return !!(
-        parsed &&
-        parsed.color &&
-        COLOR_LABELS[parsed.color] &&
-        (parsed.type === 'pillowcase' || parsed.type === 'duvet' || parsed.type === 'sheet')
-      );
     }
 
     function renameCardTitleToColor(card) {
@@ -336,9 +384,9 @@
       var rect = rec.getBoundingClientRect();
 
       return style.display !== 'none' &&
-              style.visibility !== 'hidden' &&
-              rect.width > 0 &&
-              rect.height > 0;
+        style.visibility !== 'hidden' &&
+        rect.width > 0 &&
+        rect.height > 0;
     }
 
     function isTechnicalStoreRecord(rec) {
@@ -348,7 +396,7 @@
     function getGrid(rec) {
       var grids = all('.js-store-grid-cont', rec).filter(function (grid) {
         return !grid.classList.contains('js-store-grid-cont-preloader') &&
-                !grid.classList.contains('js-store-parts-select-container');
+          !grid.classList.contains('js-store-parts-select-container');
       });
 
       return grids.find(function (grid) {
@@ -384,19 +432,15 @@
 
       directNodes = Array.prototype.slice.call(grid.children).filter(function (node) {
         return node.matches &&
-                node.matches('.js-product.t-store__card, .t-store__card, .t-clear, .t-store__grid-separator');
+          node.matches('.js-product.t-store__card, .t-store__card, .t-clear, .t-store__grid-separator');
       });
 
       if (!directNodes.length) return null;
 
       track = document.createElement('div');
       track.className = 't-store__card-list';
-
       grid.insertBefore(track, directNodes[0]);
-
-      directNodes.forEach(function (node) {
-        track.appendChild(node);
-      });
+      directNodes.forEach(function (node) { track.appendChild(node); });
 
       return track;
     }
@@ -406,8 +450,8 @@
 
       return Array.prototype.slice.call(track.children).filter(function (node) {
         return node.matches &&
-                node.matches('.js-product.t-store__card, .t-store__card') &&
-                !node.classList.contains('js-product-relevant');
+          node.matches('.js-product.t-store__card, .t-store__card') &&
+          !node.classList.contains('js-product-relevant');
       });
     }
 
@@ -419,24 +463,19 @@
       return rec.querySelector('.js-store-load-more-btn, .t-store__load-more-btn');
     }
 
-    function getLoadMoreWrap(rec) {
-      return rec.querySelector('.t-store__load-more-btn-wrap, .js-store-load-more-btn-wrap');
-    }
-
     function isInlineHidden(el) {
       if (!el) return false;
 
       return String(el.style.display || '').toLowerCase() === 'none' ||
-              String(el.style.visibility || '').toLowerCase() === 'hidden' ||
-              el.classList.contains('t-store__load-more-btn_hidden');
+        String(el.style.visibility || '').toLowerCase() === 'hidden' ||
+        el.classList.contains('t-store__load-more-btn_hidden');
     }
 
     function canClickLoadMore(rec) {
       var btn = getLoadMoreButton(rec);
-      var wrap = getLoadMoreWrap(rec);
 
       if (!btn || btn.disabled) return false;
-      if (isInlineHidden(btn) || isInlineHidden(wrap)) return false;
+      if (isInlineHidden(btn)) return false;
 
       return true;
     }
@@ -450,11 +489,7 @@
 
         var currentCount = getCards(track).length;
 
-        if (
-                currentCount > beforeCount ||
-                !canClickLoadMore(rec) ||
-                Date.now() - started > 2500
-        ) {
+        if (currentCount > beforeCount || !canClickLoadMore(rec) || Date.now() - started > 2500) {
           done();
           return;
         }
@@ -471,23 +506,20 @@
       button.type = 'button';
       button.className = 'selfles-home-store-arrow selfles-home-store-arrow_' + type;
       button.setAttribute('aria-label', type === 'next' ? 'Следующие товары' : 'Предыдущие товары');
+      button.removeAttribute('hidden');
 
       return button;
     }
 
     function resetPagerState(rec, grid, track) {
-      all('.selfles-home-store-arrow', rec).forEach(function (node) {
-        node.remove();
-      });
+      all('.selfles-home-store-arrow', rec).forEach(function (node) { node.remove(); });
 
       rec.classList.remove('selfles-home-store-ready');
       rec.removeAttribute('data-selfles-home-store-ready');
       rec.removeAttribute('data-selfles-home-store-pager-ready-v7');
+      rec.removeAttribute('data-selfles-home-store-pager-ready-v8');
 
-      if (grid) {
-        grid.classList.remove('selfles-home-store-viewport');
-      }
-
+      if (grid) grid.classList.remove('selfles-home-store-viewport');
       if (track) {
         track.classList.remove('selfles-home-store-track');
         track.style.removeProperty('transform');
@@ -497,26 +529,20 @@
     function finalizePager(rec, grid, track) {
       var prev;
       var next;
-      var state = {
-        index: 0,
-        resizeTimer: null,
-        loading: false
-      };
+      var state = {index: 0, resizeTimer: null, loading: false};
 
       if (!grid || !track) return;
-      if (rec.getAttribute('data-selfles-home-store-pager-ready-v7') === '1') return;
+      if (rec.getAttribute(READY_ATTR) === '1') return;
 
-      rec.setAttribute('data-selfles-home-store-pager-ready-v7', '1');
+      rec.setAttribute(READY_ATTR, '1');
       rec.setAttribute('data-selfles-home-store-ready', '1');
       rec.classList.add('selfles-home-store-ready');
-
       grid.classList.add('selfles-home-store-viewport');
       track.classList.add('selfles-home-store-track');
       applyColorCardTitles(track);
 
       prev = createArrow('prev');
       next = createArrow('next');
-
       grid.appendChild(prev);
       grid.appendChild(next);
 
@@ -534,39 +560,33 @@
 
         rec.setAttribute('data-selfles-home-store-card-count', String(cards.length));
         track.setAttribute('data-selfles-home-store-card-count', String(cards.length));
+        track.style.setProperty('--selfles-main-store-per-view', String(perView));
 
         if (cards.length <= perView && !hasMore) {
           state.index = 0;
           track.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
           track.style.setProperty('justify-content', 'center', 'important');
-
           prev.style.display = 'none';
           next.style.display = 'none';
           prev.disabled = true;
           next.disabled = true;
           next.classList.remove('is-loading');
           next.setAttribute('aria-busy', 'false');
-
           return;
         }
 
         track.style.removeProperty('justify-content');
+        if (state.index > maxIndex) state.index = maxIndex;
 
-        if (state.index > maxIndex) {
-          state.index = maxIndex;
-        }
-
-        offset = cards[state.index]
-                ? cards[state.index].offsetLeft - cards[0].offsetLeft
-                : 0;
-
+        offset = cards[state.index] ? cards[state.index].offsetLeft - cards[0].offsetLeft : 0;
         track.style.setProperty('transform', 'translate3d(' + (-offset) + 'px, 0, 0)', 'important');
 
         prev.disabled = state.index <= 0;
         next.classList.toggle('is-loading', !!state.loading);
         next.setAttribute('aria-busy', state.loading ? 'true' : 'false');
         next.disabled = !state.loading && state.index >= maxIndex && !hasMore;
-
+        prev.removeAttribute('hidden');
+        next.removeAttribute('hidden');
         prev.style.display = '';
         next.style.display = '';
       }
@@ -585,7 +605,6 @@
           beforeCount = cards.length;
           state.loading = true;
           refresh();
-
           btn.click();
 
           waitForCardChange(rec, grid, track, beforeCount, function () {
@@ -600,23 +619,12 @@
           return;
         }
 
-        if (direction > 0) {
-          state.index = Math.min(state.index + perView, maxIndex);
-        } else {
-          state.index = Math.max(state.index - perView, 0);
-        }
-
+        state.index = direction > 0 ? Math.min(state.index + perView, maxIndex) : Math.max(state.index - perView, 0);
         refresh();
       }
 
-      prev.addEventListener('click', function () {
-        go(-1);
-      });
-
-      next.addEventListener('click', function () {
-        go(1);
-      });
-
+      prev.addEventListener('click', function () { go(-1); });
+      next.addEventListener('click', function () { go(1); });
       window.addEventListener('resize', function () {
         clearTimeout(state.resizeTimer);
         state.resizeTimer = setTimeout(refresh, 120);
@@ -630,29 +638,23 @@
     function setupStoreRecord(rec) {
       var grid;
       var track;
-      var cards;
 
       if (!rec) return;
       if (isTechnicalStoreRecord(rec)) return;
       if (!isRecordVisible(rec)) return;
-      if (rec.getAttribute('data-selfles-home-store-pager-loading-v7') === '1') return;
-      if (rec.getAttribute('data-selfles-home-store-pager-ready-v7') === '1') return;
+      if (rec.getAttribute(LOADING_ATTR) === '1') return;
+      if (rec.getAttribute(READY_ATTR) === '1') return;
 
       grid = getGrid(rec);
       track = getTrack(grid);
-      cards = getCards(track);
+      if (!grid || !track || !getCards(track).length) return;
 
-      if (!grid || !track || !cards.length) return;
-
-      rec.setAttribute('data-selfles-home-store-pager-loading-v7', '1');
-
+      rec.setAttribute(LOADING_ATTR, '1');
       resetPagerState(rec, grid, track);
-
-      rec.removeAttribute('data-selfles-home-store-pager-loading-v7');
+      rec.removeAttribute(LOADING_ATTR);
 
       grid = getGrid(rec);
       track = getTrack(grid);
-
       if (!grid || !track || !getCards(track).length) return;
 
       finalizePager(rec, grid, track);
@@ -662,13 +664,13 @@
       if (!isHomePage()) return;
 
       injectHomeArrowStyles();
-      document.body.classList.add('selfles-home-store-arrows-page');
+      document.documentElement.classList.add('selfles-home-store-arrows-page');
+      if (document.body) {
+        document.body.classList.add('selfles-home-store-arrows-page');
+      }
 
       all('.t-rec').forEach(function (rec) {
-        if (
-                rec.querySelector('.t-store, .js-store') &&
-                rec.querySelector('.js-store-grid-cont')
-        ) {
+        if (rec.querySelector('.t-store, .js-store') && rec.querySelector('.js-store-grid-cont')) {
           setupStoreRecord(rec);
         }
       });
@@ -699,18 +701,12 @@
       setTimeout(run, 3000);
     });
 
-    window.addEventListener('resize', function () {
-      setTimeout(run, 200);
-    });
-
+    window.addEventListener('resize', function () { setTimeout(run, 200); });
     window.addEventListener('selfles:products-manifest-ready', run);
     window.addEventListener('selfles:live-products-ready', run);
 
     if ('MutationObserver' in window && document.body) {
-      new MutationObserver(scheduleRun).observe(document.body, {
-        childList: true,
-        subtree: true
-      });
+      new MutationObserver(scheduleRun).observe(document.body, {childList: true, subtree: true});
     }
   })();
 </script>
