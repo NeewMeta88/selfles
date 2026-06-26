@@ -1,6 +1,6 @@
 <script>
   (function () {
-    var INIT_ATTR = 'data-selfles-home-store-arrow-pager-v6';
+    var INIT_ATTR = 'data-selfles-home-store-arrow-pager-v7';
 
     if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
     document.documentElement.setAttribute(INIT_ATTR, '1');
@@ -10,6 +10,24 @@
       rec2397921511: true,
       rec1653024161: true,
       rec1556696391: true
+    };
+
+    var COLOR_LABELS = {
+      pink: 'Розовый',
+      green: 'Зелёный',
+      coffee: 'Кофейный',
+      blue: 'Голубой',
+      cream: 'Сливочный',
+      white: 'Белый'
+    };
+
+    var COLOR_BY_CODE = {
+      P: 'pink',
+      G: 'green',
+      C: 'coffee',
+      B: 'blue',
+      S: 'cream',
+      W: 'white'
     };
 
     function getPath() {
@@ -24,9 +42,13 @@
 
     function isHomePage() {
       var path = getPath();
+      var alias = getPageAlias();
 
       return path === '/' ||
-              path === '/page94832776.html';
+              path === '/page94832776.html' ||
+              alias === 'main' ||
+              alias === 'home' ||
+              alias === 'index';
     }
 
     function isCatalogPage() {
@@ -35,6 +57,260 @@
 
     function all(selector, root) {
       return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+    }
+
+    function closest(node, selector) {
+      return node && node.closest ? node.closest(selector) : null;
+    }
+
+    function injectHomeArrowStyles() {
+      var id = 'selfles-home-store-arrow-pager-style-v7';
+      var style;
+
+      if (document.getElementById(id)) return;
+
+      style = document.createElement('style');
+      style.id = id;
+      style.textContent = [
+        'body.selfles-home-store-arrows-page .t-store__load-more-btn-wrap,',
+        'body.selfles-home-store-arrows-page .js-store-load-more-btn-wrap {',
+        '  position: absolute !important;',
+        '  width: 1px !important;',
+        '  height: 1px !important;',
+        '  min-width: 1px !important;',
+        '  min-height: 1px !important;',
+        '  max-width: 1px !important;',
+        '  max-height: 1px !important;',
+        '  margin: 0 !important;',
+        '  padding: 0 !important;',
+        '  overflow: hidden !important;',
+        '  opacity: 0 !important;',
+        '  pointer-events: none !important;',
+        '  clip: rect(0 0 0 0) !important;',
+        '  clip-path: inset(50%) !important;',
+        '}',
+        'body.selfles-home-store-arrows-page .selfles-home-store-viewport {',
+        '  position: relative !important;',
+        '  overflow: hidden !important;',
+        '}',
+        'body.selfles-home-store-arrows-page .selfles-home-store-track {',
+        '  display: flex !important;',
+        '  flex-wrap: nowrap !important;',
+        '  align-items: flex-start !important;',
+        '  will-change: transform !important;',
+        '  transition: transform .28s ease !important;',
+        '}',
+        'body.selfles-home-store-arrows-page .selfles-home-store-track > .t-clear,',
+        'body.selfles-home-store-arrows-page .selfles-home-store-track > .t-store__grid-separator {',
+        '  display: none !important;',
+        '}',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow {',
+        '  position: absolute !important;',
+        '  top: 50% !important;',
+        '  z-index: 50 !important;',
+        '  display: flex !important;',
+        '  align-items: center !important;',
+        '  justify-content: center !important;',
+        '  width: 72px !important;',
+        '  height: 72px !important;',
+        '  min-width: 72px !important;',
+        '  min-height: 72px !important;',
+        '  padding: 0 0 6px !important;',
+        '  border: 2px solid #EE413C !important;',
+        '  border-radius: 999px !important;',
+        '  background: rgba(255,255,255,.94) !important;',
+        '  color: #EE413C !important;',
+        '  box-shadow: none !important;',
+        '  transform: translateY(-50%) !important;',
+        '  cursor: pointer !important;',
+        '  pointer-events: auto !important;',
+        '  appearance: none !important;',
+        '  -webkit-appearance: none !important;',
+        '}',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_prev { left: 16px !important; }',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_next { right: 16px !important; }',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow::before {',
+        '  display: block !important;',
+        '  font-family: Arial, sans-serif !important;',
+        '  font-size: 54px !important;',
+        '  line-height: 1 !important;',
+        '  font-weight: 400 !important;',
+        '  color: #EE413C !important;',
+        '}',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_prev::before { content: "\\2190" !important; }',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow_next::before { content: "\\2192" !important; }',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow:disabled {',
+        '  opacity: .28 !important;',
+        '  cursor: default !important;',
+        '  pointer-events: none !important;',
+        '}',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow.is-loading::before { opacity: 0 !important; }',
+        'body.selfles-home-store-arrows-page .selfles-home-store-arrow.is-loading::after {',
+        '  content: "" !important;',
+        '  position: absolute !important;',
+        '  left: 50% !important;',
+        '  top: 50% !important;',
+        '  width: 26px !important;',
+        '  height: 26px !important;',
+        '  margin: -13px 0 0 -13px !important;',
+        '  border: 2px solid rgba(238,65,60,.28) !important;',
+        '  border-top-color: #EE413C !important;',
+        '  border-radius: 50% !important;',
+        '  animation: selflesHomeArrowSpin .7s linear infinite !important;',
+        '}',
+        '@keyframes selflesHomeArrowSpin { to { transform: rotate(360deg); } }',
+        '@media screen and (max-width: 1200px) {',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow {',
+        '    width: 56px !important;',
+        '    height: 56px !important;',
+        '    min-width: 56px !important;',
+        '    min-height: 56px !important;',
+        '    padding-bottom: 5px !important;',
+        '  }',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow::before { font-size: 42px !important; }',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow_prev { left: 10px !important; }',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow_next { right: 10px !important; }',
+        '}',
+        '@media screen and (max-width: 640px) {',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow {',
+        '    width: 44px !important;',
+        '    height: 44px !important;',
+        '    min-width: 44px !important;',
+        '    min-height: 44px !important;',
+        '    border-width: 1.5px !important;',
+        '    padding-bottom: 4px !important;',
+        '  }',
+        '  body.selfles-home-store-arrows-page .selfles-home-store-arrow::before { font-size: 34px !important; }',
+        '}'
+      ].join('\n');
+
+      document.head.appendChild(style);
+    }
+
+    function normalizeSku(value) {
+      var sku = String(value || '').trim().toUpperCase();
+      var aliases = window.SELFLES_SKU_ALIASES || {};
+
+      sku = sku.replace(/^\s*(SKU|АРТИКУЛ|АРТ\.?|ART\.?|VENDOR\s+CODE)\s*:?\s*/i, '').trim().toUpperCase();
+
+      return String(aliases[sku] || aliases[sku.replace(/\s+/g, '')] || sku).trim().toUpperCase();
+    }
+
+    function parseSku(value) {
+      var external = window.SELFLES_PRODUCT_DATA && window.SELFLES_PRODUCT_DATA.parseSku;
+      var sku = normalizeSku(value);
+      var match;
+
+      if (typeof external === 'function') {
+        try {
+          match = external(sku);
+          if (match && match.type && match.color) return match;
+        } catch (e) {}
+      }
+
+      match = sku.match(/^N([PGCBSW])-?/);
+      if (match) return {sku: sku, type: 'pillowcase', color: COLOR_BY_CODE[match[1]] || ''};
+
+      match = sku.match(/^PP(?:150|180|220)([PGCBSW])-?/);
+      if (match) return {sku: sku, type: 'duvet', color: COLOR_BY_CODE[match[1]] || ''};
+
+      match = sku.match(/^PP([PGCBSW])-?/);
+      if (match) return {sku: sku, type: 'duvet', color: COLOR_BY_CODE[match[1]] || ''};
+
+      match = sku.match(/^P(?:160|180|KS|EUR)([PGCBSW])-?/);
+      if (match) return {sku: sku, type: 'sheet', color: COLOR_BY_CODE[match[1]] || ''};
+
+      return null;
+    }
+
+    function getText(node) {
+      return node ? String(node.textContent || '').replace(/\s+/g, ' ').trim() : '';
+    }
+
+    function getAttr(node, names) {
+      var i;
+      var value;
+
+      if (!node || !node.getAttribute) return '';
+
+      for (i = 0; i < names.length; i += 1) {
+        value = node.getAttribute(names[i]);
+        if (value !== null && value !== undefined && String(value).trim() !== '') return String(value).trim();
+      }
+
+      return '';
+    }
+
+    function skuFromCard(card) {
+      var nested;
+      var value;
+      var match;
+
+      if (!card) return '';
+
+      value = normalizeSku(getAttr(card, ['data-selfles-sku', 'data-product-sku', 'data-sku', 'data-product-lid', 'data-product-uid']));
+      if (value && !/^\d+$/.test(value) && parseSku(value)) return value;
+
+      nested = card.querySelector('.js-product-sku, .js-store-prod-sku, .t-store__card__sku, [data-product-sku], [data-sku]');
+      if (nested) {
+        value = normalizeSku(getAttr(nested, ['data-product-sku', 'data-sku', 'data-selfles-sku']) || getText(nested));
+        if (value && !/^\d+$/.test(value) && parseSku(value)) return value;
+      }
+
+      match = String(card.textContent || '').toUpperCase().match(/\b(?:N[PGCBSW]-?BAM\d+|P(?:160|180|KS|EUR)[PGCBSW]-?BAM\d+|PP(?:150|180|220)?[PGCBSW]-?BAM\d+)\b/);
+
+      return match ? normalizeSku(match[0]) : '';
+    }
+
+    function isColorTitleCard(card) {
+      var parsed = parseSku(skuFromCard(card));
+
+      return !!(
+        parsed &&
+        parsed.color &&
+        COLOR_LABELS[parsed.color] &&
+        (parsed.type === 'pillowcase' || parsed.type === 'duvet' || parsed.type === 'sheet')
+      );
+    }
+
+    function renameCardTitleToColor(card) {
+      var parsed;
+      var title;
+      var original;
+      var label;
+
+      if (!card) return;
+      if (card.classList.contains('js-product-relevant')) return;
+      if (card.classList.contains('selfles-related-card')) return;
+      if (closest(card, '.t-store__prod-popup, .t-store__product-popup, .t-store__product-snippet, .t-store__cart, .t706')) return;
+
+      parsed = parseSku(skuFromCard(card));
+      if (!parsed || !parsed.color || !COLOR_LABELS[parsed.color]) return;
+      if (!(parsed.type === 'pillowcase' || parsed.type === 'duvet' || parsed.type === 'sheet')) return;
+
+      title = card.querySelector('.t-store__card__title, .js-product-name, .js-store-prod-name');
+      if (!title) return;
+
+      label = COLOR_LABELS[parsed.color];
+      original = title.getAttribute('data-selfles-card-title-original') || title.getAttribute('data-selfles-title-raw') || getText(title);
+
+      if (original && original !== label) {
+        title.setAttribute('data-selfles-card-title-original', original);
+      }
+
+      if (getText(title) !== label) {
+        title.textContent = label;
+      }
+
+      title.setAttribute('data-selfles-card-title-mode', 'color');
+      card.setAttribute('data-selfles-card-title-mode', 'color');
+      card.setAttribute('data-selfles-card-color', parsed.color);
+    }
+
+    function applyColorCardTitles(root) {
+      if (!isHomePage() && !isCatalogPage()) return;
+
+      all('.js-product.t-store__card:not(.js-product-relevant), .t-store__card:not(.js-product-relevant)', root || document).forEach(renameCardTitleToColor);
     }
 
     function renameCatalogLoadMore() {
@@ -170,6 +446,7 @@
 
       function check() {
         absorbLooseTrackNodes(grid, track);
+        applyColorCardTitles(track);
 
         var currentCount = getCards(track).length;
 
@@ -205,7 +482,7 @@
 
       rec.classList.remove('selfles-home-store-ready');
       rec.removeAttribute('data-selfles-home-store-ready');
-      rec.removeAttribute('data-selfles-home-store-pager-ready-v6');
+      rec.removeAttribute('data-selfles-home-store-pager-ready-v7');
 
       if (grid) {
         grid.classList.remove('selfles-home-store-viewport');
@@ -227,14 +504,15 @@
       };
 
       if (!grid || !track) return;
-      if (rec.getAttribute('data-selfles-home-store-pager-ready-v6') === '1') return;
+      if (rec.getAttribute('data-selfles-home-store-pager-ready-v7') === '1') return;
 
-      rec.setAttribute('data-selfles-home-store-pager-ready-v6', '1');
+      rec.setAttribute('data-selfles-home-store-pager-ready-v7', '1');
       rec.setAttribute('data-selfles-home-store-ready', '1');
       rec.classList.add('selfles-home-store-ready');
 
       grid.classList.add('selfles-home-store-viewport');
       track.classList.add('selfles-home-store-track');
+      applyColorCardTitles(track);
 
       prev = createArrow('prev');
       next = createArrow('next');
@@ -244,6 +522,7 @@
 
       function refresh() {
         absorbLooseTrackNodes(grid, track);
+        applyColorCardTitles(track);
 
         var perView = getPerView();
         var cards = getCards(track);
@@ -258,7 +537,6 @@
 
         if (cards.length <= perView && !hasMore) {
           state.index = 0;
-
           track.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
           track.style.setProperty('justify-content', 'center', 'important');
 
@@ -315,6 +593,7 @@
             cards = getCards(track);
             maxIndex = Math.max(0, cards.length - perView);
             state.index = Math.min(state.index + perView, maxIndex);
+            applyColorCardTitles(track);
             refresh();
           });
 
@@ -356,8 +635,8 @@
       if (!rec) return;
       if (isTechnicalStoreRecord(rec)) return;
       if (!isRecordVisible(rec)) return;
-      if (rec.getAttribute('data-selfles-home-store-pager-loading-v6') === '1') return;
-      if (rec.getAttribute('data-selfles-home-store-pager-ready-v6') === '1') return;
+      if (rec.getAttribute('data-selfles-home-store-pager-loading-v7') === '1') return;
+      if (rec.getAttribute('data-selfles-home-store-pager-ready-v7') === '1') return;
 
       grid = getGrid(rec);
       track = getTrack(grid);
@@ -365,11 +644,11 @@
 
       if (!grid || !track || !cards.length) return;
 
-      rec.setAttribute('data-selfles-home-store-pager-loading-v6', '1');
+      rec.setAttribute('data-selfles-home-store-pager-loading-v7', '1');
 
       resetPagerState(rec, grid, track);
 
-      rec.removeAttribute('data-selfles-home-store-pager-loading-v6');
+      rec.removeAttribute('data-selfles-home-store-pager-loading-v7');
 
       grid = getGrid(rec);
       track = getTrack(grid);
@@ -382,6 +661,7 @@
     function setupHomeArrows() {
       if (!isHomePage()) return;
 
+      injectHomeArrowStyles();
       document.body.classList.add('selfles-home-store-arrows-page');
 
       all('.t-rec').forEach(function (rec) {
@@ -396,7 +676,9 @@
 
     function run() {
       renameCatalogLoadMore();
+      applyColorCardTitles();
       setupHomeArrows();
+      applyColorCardTitles();
     }
 
     function scheduleRun() {
@@ -420,6 +702,9 @@
     window.addEventListener('resize', function () {
       setTimeout(run, 200);
     });
+
+    window.addEventListener('selfles:products-manifest-ready', run);
+    window.addEventListener('selfles:live-products-ready', run);
 
     if ('MutationObserver' in window && document.body) {
       new MutationObserver(scheduleRun).observe(document.body, {
