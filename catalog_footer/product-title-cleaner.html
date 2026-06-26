@@ -376,6 +376,98 @@
             ];
         }
 
+        function compactDetailsText(value) {
+            return String(value || '')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function uniqueParagraphs(values) {
+            var seen = {};
+            var result = [];
+
+            (values || []).forEach(function (value) {
+                var text = compactDetailsText(value);
+                var key = text.toLowerCase();
+
+                if (!text || seen[key]) return;
+
+                seen[key] = true;
+                result.push(text);
+            });
+
+            return result;
+        }
+
+        function paragraphsFromNativeContent(content) {
+            var nodes;
+            var result = [];
+
+            if (!content) return result;
+
+            nodes = all('blockquote, p, li', content);
+
+            if (nodes.length) {
+                nodes.forEach(function (node) {
+                    result.push(visibleText(node));
+                });
+            } else {
+                result.push(visibleText(content));
+            }
+
+            return uniqueParagraphs(result);
+        }
+
+        function nativeTabTitle(item) {
+            return visibleText(
+                item.querySelector('.t-store__tabs__item-title') ||
+                item.querySelector('.js-store-tab-button') ||
+                item
+            );
+        }
+
+        function readNativeDetails(root) {
+            var data = {details: [], care: []};
+
+            all('.t-store__tabs__item', root).forEach(function (item) {
+                var title = nativeTabTitle(item).toLowerCase();
+                var paragraphs = paragraphsFromNativeContent(item.querySelector('.t-store__tabs__content'));
+
+                if (!paragraphs.length) return;
+
+                if (title.indexOf('уход') !== -1) {
+                    data.care = paragraphs;
+                } else if (title.indexOf('подробнее') !== -1 || !data.details.length) {
+                    data.details = paragraphs;
+                }
+            });
+
+            return data;
+        }
+
+        function hideNativeTabs(root) {
+            all([
+                '.t-store__tabs',
+                '.t-store__tabs__list',
+                '.t-store__tabs__wrapper',
+                '.t-store__prod-popup__tabs',
+                '.t-store__prod__tabs'
+            ].join(','), root).forEach(function (node) {
+                if (closest(node, '.selfles-product-details')) return;
+
+                node.classList.add('selfles-tilda-tabs-hidden');
+                node.setAttribute('aria-hidden', 'true');
+                node.style.setProperty('display', 'none', 'important');
+                node.style.setProperty('height', '0', 'important');
+                node.style.setProperty('min-height', '0', 'important');
+                node.style.setProperty('max-height', '0', 'important');
+                node.style.setProperty('margin', '0', 'important');
+                node.style.setProperty('padding', '0', 'important');
+                node.style.setProperty('overflow', 'hidden', 'important');
+            });
+        }
+
         function createDetailsItem(titleText, paragraphs, isOpen) {
             var item = document.createElement('div');
             var title = document.createElement('button');
@@ -388,7 +480,7 @@
             title.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
             body.className = 'selfles-product-details__body';
 
-            paragraphs.forEach(function (text) {
+            uniqueParagraphs(paragraphs).forEach(function (text) {
                 var p = document.createElement('p');
                 p.textContent = text;
                 body.appendChild(p);
@@ -406,34 +498,33 @@
 
         function normalizeProductDetails() {
             var root;
-            var nativeTabs;
-            var existingFallback;
+            var existing;
             var type;
             var anchor;
             var details;
+            var nativeData;
+            var detailsParagraphs;
+            var rulesParagraphs;
+            var signature;
 
             if (!isProductPage()) return;
 
             root = getProductInfoRoot();
             if (!root) return;
 
-            nativeTabs = root.querySelector([
-                '.t-store__tabs',
-                '.t-store__tabs__wrapper',
-                '.t-store__prod-popup__tabs',
-                '.t-store__prod__tabs'
-            ].join(','));
-
-            existingFallback = root.querySelector('.selfles-product-details[data-selfles-details-fallback="1"]');
-
-            if (nativeTabs) {
-                if (existingFallback) existingFallback.remove();
-                return;
-            }
-
-            if (existingFallback) return;
+            nativeData = readNativeDetails(root);
+            hideNativeTabs(root);
 
             type = currentProductType(root);
+            detailsParagraphs = nativeData.details.length ? nativeData.details : productDetailsParagraphs(type, root);
+            rulesParagraphs = nativeData.care.length ? nativeData.care : careParagraphs();
+            signature = detailsParagraphs.join('\n') + '\n---\n' + rulesParagraphs.join('\n');
+
+            existing = root.querySelector('.selfles-product-details[data-selfles-details-fallback="1"]');
+
+            if (existing && existing.getAttribute('data-selfles-details-signature') === signature) return;
+            if (existing) existing.remove();
+
             anchor = root.querySelector('.selfles-buy-zone') ||
                 root.querySelector('.js-store-price-wrapper') ||
                 root.querySelector('.js-store-prod-text') ||
@@ -444,8 +535,9 @@
             details = document.createElement('div');
             details.className = 'selfles-product-details';
             details.setAttribute('data-selfles-details-fallback', '1');
-            details.appendChild(createDetailsItem('Подробнее', productDetailsParagraphs(type, root), true));
-            details.appendChild(createDetailsItem('Правила ухода', careParagraphs(), false));
+            details.setAttribute('data-selfles-details-signature', signature);
+            details.appendChild(createDetailsItem('Подробнее', detailsParagraphs, true));
+            details.appendChild(createDetailsItem('Правила ухода', rulesParagraphs, false));
 
             anchor.insertAdjacentElement('afterend', details);
         }
