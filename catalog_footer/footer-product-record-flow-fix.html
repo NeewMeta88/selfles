@@ -26,11 +26,9 @@ body.selfles-product-page .r.t-rec:has(.js-store-product.js-product) {
 body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .t-store,
 body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .t-store__prod-snippet__container,
 body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .t-store__product-snippet,
-body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .selfles-product-fluid-container,
 body.selfles-product-page #rec2310894021 .t-store,
 body.selfles-product-page #rec2310894021 .t-store__prod-snippet__container,
-body.selfles-product-page #rec2310894021 .t-store__product-snippet,
-body.selfles-product-page #rec2310894021 .selfles-product-fluid-container {
+body.selfles-product-page #rec2310894021 .t-store__product-snippet {
   width: 100% !important;
   max-width: none !important;
   height: auto !important;
@@ -43,9 +41,7 @@ body.selfles-product-page #rec2310894021 .selfles-product-fluid-container {
 
 body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .t-store::after,
 body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .t-store__prod-snippet__container::after,
-body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .t-store__product-snippet::after,
-body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .selfles-product-fluid-container::after,
-body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .selfles-product-main-layout::after {
+body.selfles-product-page .r.t-rec.selfles-product-flow-fixed .t-store__product-snippet::after {
   content: "" !important;
   display: table !important;
   clear: both !important;
@@ -188,6 +184,18 @@ body.selfles-product-page #t-footer {
     node.style.setProperty('box-sizing', 'border-box', 'important');
   }
 
+  function forceProductLayoutGrid(node) {
+    if (!node) return;
+
+    node.style.setProperty('display', 'grid', 'important');
+    node.style.setProperty('height', 'auto', 'important');
+    node.style.setProperty('overflow', 'visible', 'important');
+    node.style.setProperty('opacity', '1', 'important');
+    node.style.setProperty('visibility', 'visible', 'important');
+    node.style.setProperty('pointer-events', 'auto', 'important');
+    node.style.setProperty('box-sizing', 'border-box', 'important');
+  }
+
   function forceRecordPosition(root) {
     if (!root) return;
 
@@ -300,9 +308,10 @@ body.selfles-product-page #t-footer {
       root,
       root.querySelector('.t-store'),
       root.querySelector('.t-store__prod-snippet__container'),
-      root.querySelector('.t-store__product-snippet'),
-      root.querySelector('.selfles-product-fluid-container')
+      root.querySelector('.t-store__product-snippet')
     ].forEach(forceRecordFlow);
+
+    forceProductLayoutGrid(root.querySelector('.selfles-product-main-layout'));
 
     resetRunawayHeight(root);
     height = clampHeight(measureProductHeight(root));
