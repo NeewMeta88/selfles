@@ -255,9 +255,57 @@
             el.setAttribute('data-selfles-title-raw', raw);
         }
 
+        function formatPriceText(value) {
+            var raw = String(value || '')
+                .replace(/\u00a0/g, ' ')
+                .replace(/[₽рруб\.]/gi, '')
+                .replace(/\s+/g, '')
+                .replace(',', '.')
+                .trim();
+            var number = Number(raw);
+            var rounded;
+
+            if (!isFinite(number)) return '';
+
+            rounded = Math.round(number);
+
+            if (Math.abs(number - rounded) > 0.000001) {
+                return String(value || '').replace(/\.0+\b/g, '').trim();
+            }
+
+            return String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        }
+
+        function normalizePrices() {
+            all([
+                '.js-product-price.js-store-prod-price-val',
+                '.js-store-prod-price-val',
+                '.t-store__prod-popup__price-value',
+                '.t-store__prod__price-value',
+                '.t-store__card__price-value'
+            ].join(',')).forEach(function (priceEl) {
+                var clean;
+                var value = priceEl.textContent || '';
+
+                if (value.indexOf('.') === -1 && value.indexOf(',') === -1) return;
+
+                clean = formatPriceText(value);
+                if (!clean) return;
+
+                if (priceEl.textContent !== clean) {
+                    priceEl.textContent = clean;
+                }
+
+                if (priceEl.hasAttribute('data-product-price-def-str')) {
+                    priceEl.setAttribute('data-product-price-def-str', clean.replace(/\s+/g, ''));
+                }
+            });
+        }
+
         function applyCleaner() {
             ensureStyle();
             collectRawTitleMaps();
+            normalizePrices();
 
             all([
                 '.js-product.t-store__card .t-store__card__title',
