@@ -255,14 +255,21 @@
             el.setAttribute('data-selfles-title-raw', raw);
         }
 
-        function formatPriceText(value) {
+        function parsePriceNumber(value) {
             var raw = String(value || '')
                 .replace(/\u00a0/g, ' ')
-                .replace(/[₽рруб\.]/gi, '')
+                .replace(/руб\.?/gi, '')
+                .replace(/[₽р]/gi, '')
                 .replace(/\s+/g, '')
                 .replace(',', '.')
+                .replace(/[^0-9.\-]/g, '')
                 .trim();
-            var number = Number(raw);
+
+            return Number(raw);
+        }
+
+        function formatPriceText(value) {
+            var number = parsePriceNumber(value);
             var rounded;
 
             if (!isFinite(number)) return '';
@@ -270,7 +277,7 @@
             rounded = Math.round(number);
 
             if (Math.abs(number - rounded) > 0.000001) {
-                return String(value || '').replace(/\.0+\b/g, '').trim();
+                return String(number).replace('.', ',');
             }
 
             return String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -285,19 +292,20 @@
                 '.t-store__card__price-value'
             ].join(',')).forEach(function (priceEl) {
                 var clean;
-                var value = priceEl.textContent || '';
+                var source = priceEl.getAttribute('data-product-price-def') || priceEl.textContent || '';
+                var number = parsePriceNumber(source);
 
-                if (value.indexOf('.') === -1 && value.indexOf(',') === -1) return;
+                if (!source) return;
 
-                clean = formatPriceText(value);
+                clean = formatPriceText(source);
                 if (!clean) return;
 
                 if (priceEl.textContent !== clean) {
                     priceEl.textContent = clean;
                 }
 
-                if (priceEl.hasAttribute('data-product-price-def-str')) {
-                    priceEl.setAttribute('data-product-price-def-str', clean.replace(/\s+/g, ''));
+                if (priceEl.hasAttribute('data-product-price-def-str') && isFinite(number)) {
+                    priceEl.setAttribute('data-product-price-def-str', String(Math.round(number)));
                 }
             });
         }
@@ -326,6 +334,13 @@
                 .trim();
         }
 
+        function rawText(el) {
+            return String(el ? (el.innerText || el.textContent || '') : '')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\r/g, '')
+                .trim();
+        }
+
         function currentProductType(root) {
             var sku = '';
 
@@ -343,12 +358,51 @@
             return '';
         }
 
+        function compactDetailsText(value) {
+            return String(value || '')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function paragraphParts(value) {
+            var text = String(value || '')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\r/g, '')
+                .replace(/([.!?])(?=[А-ЯЁA-Z])/g, '$1\n')
+                .trim();
+
+            return text.split(/\n+/)
+                .map(compactDetailsText)
+                .filter(Boolean);
+        }
+
+        function uniqueParagraphs(values) {
+            var seen = {};
+            var result = [];
+
+            (values || []).forEach(function (value) {
+                paragraphParts(value).forEach(function (part) {
+                    var key = part.toLowerCase();
+
+                    if (!part || seen[key]) return;
+
+                    seen[key] = true;
+                    result.push(part);
+                });
+            });
+
+            return result;
+        }
+
         function productDetailsParagraphs(type, root) {
-            var shortText = visibleText(root && root.querySelector('.js-store-prod-all-text'));
+            var shortParts = paragraphParts(rawText(root && root.querySelector('.js-store-prod-all-text')));
             var common = 'Выполнено из 100% бамбукового волокна — натурального экологичного материала, мягкого и гладкого, как шёлк, но более практичного в уходе и использовании. Гипоаллергенный материал бережно заботится о коже и волосах, обеспечивает комфортный микроклимат: прохладу летом и уютное тепло зимой.';
             var ending = 'Сочетайте разные цвета и размеры или выбирайте однотонный комплект — создайте свой идеальный сет под настроение. Яркая подарочная упаковка с покрытием soft touch делает selfles отличным выбором для себя и близких.';
             var specific = '';
             var result = [];
+
+            if (shortParts.length > 1) return shortParts;
 
             if (type === 'duvet') {
                 specific = 'Пододеяльник комфортно ощущается на коже, красиво драпируется и помогает сохранять аккуратный вид спального комплекта.';
@@ -358,7 +412,7 @@
                 specific = 'Простыня мягко ложится на матрас, приятна к телу и дополняет комплект спокойной тактильной роскошью.';
             }
 
-            if (shortText) result.push(shortText);
+            if (shortParts.length) result.push(shortParts[0]);
             result.push(common);
             if (specific) result.push(specific);
             result.push(ending);
@@ -376,30 +430,6 @@
             ];
         }
 
-        function compactDetailsText(value) {
-            return String(value || '')
-                .replace(/\u00a0/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        function uniqueParagraphs(values) {
-            var seen = {};
-            var result = [];
-
-            (values || []).forEach(function (value) {
-                var text = compactDetailsText(value);
-                var key = text.toLowerCase();
-
-                if (!text || seen[key]) return;
-
-                seen[key] = true;
-                result.push(text);
-            });
-
-            return result;
-        }
-
         function paragraphsFromNativeContent(content) {
             var nodes;
             var result = [];
@@ -410,10 +440,10 @@
 
             if (nodes.length) {
                 nodes.forEach(function (node) {
-                    result.push(visibleText(node));
+                    result = result.concat(paragraphParts(rawText(node)));
                 });
             } else {
-                result.push(visibleText(content));
+                result = paragraphParts(rawText(content));
             }
 
             return uniqueParagraphs(result);
@@ -438,7 +468,7 @@
 
                 if (title.indexOf('уход') !== -1) {
                     data.care = paragraphs;
-                } else if (title.indexOf('подробнее') !== -1 || !data.details.length) {
+                } else if (title.indexOf('подробнее') !== -1 || title.indexOf('опис') !== -1 || !data.details.length) {
                     data.details = paragraphs;
                 }
             });
