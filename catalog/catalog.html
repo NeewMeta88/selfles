@@ -5,6 +5,24 @@
     if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
     document.documentElement.setAttribute(INIT_ATTR, '1');
 
+    var COLOR_LABELS = {
+      pink: 'Розовый',
+      green: 'Зелёный',
+      coffee: 'Кофейный',
+      blue: 'Голубой',
+      cream: 'Сливочный',
+      white: 'Белый'
+    };
+
+    var COLOR_BY_CODE = {
+      P: 'pink',
+      G: 'green',
+      C: 'coffee',
+      B: 'blue',
+      S: 'cream',
+      W: 'white'
+    };
+
     function isProductPage() {
       return location.pathname.indexOf('/catalog/tproduct/') !== -1 ||
               location.pathname.indexOf('/tproduct/') !== -1 ||
@@ -21,6 +39,125 @@
 
     function all(selector, root) {
       return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+    }
+
+    function closest(node, selector) {
+      return node && node.closest ? node.closest(selector) : null;
+    }
+
+    function getText(node) {
+      return node ? String(node.textContent || '').replace(/\s+/g, ' ').trim() : '';
+    }
+
+    function getAttr(node, names) {
+      var i;
+      var value;
+
+      if (!node || !node.getAttribute) return '';
+
+      for (i = 0; i < names.length; i += 1) {
+        value = node.getAttribute(names[i]);
+        if (value !== null && value !== undefined && String(value).trim() !== '') return String(value).trim();
+      }
+
+      return '';
+    }
+
+    function normalizeSku(value) {
+      var sku = String(value || '').trim().toUpperCase();
+      var aliases = window.SELFLES_SKU_ALIASES || {};
+
+      sku = sku.replace(/^\s*(SKU|АРТИКУЛ|АРТ\.?|ART\.?|VENDOR\s+CODE)\s*:?\s*/i, '').trim().toUpperCase();
+
+      return String(aliases[sku] || aliases[sku.replace(/\s+/g, '')] || sku).trim().toUpperCase();
+    }
+
+    function parseSku(value) {
+      var external = window.SELFLES_PRODUCT_DATA && window.SELFLES_PRODUCT_DATA.parseSku;
+      var sku = normalizeSku(value);
+      var match;
+
+      if (typeof external === 'function') {
+        try {
+          match = external(sku);
+          if (match && match.type && match.color) return match;
+        } catch (e) {}
+      }
+
+      match = sku.match(/^N([PGCBSW])-?/);
+      if (match) return {sku: sku, type: 'pillowcase', color: COLOR_BY_CODE[match[1]] || ''};
+
+      match = sku.match(/^PP(?:150|180|220)([PGCBSW])-?/);
+      if (match) return {sku: sku, type: 'duvet', color: COLOR_BY_CODE[match[1]] || ''};
+
+      match = sku.match(/^PP([PGCBSW])-?/);
+      if (match) return {sku: sku, type: 'duvet', color: COLOR_BY_CODE[match[1]] || ''};
+
+      match = sku.match(/^P(?:160|180|KS|EUR)([PGCBSW])-?/);
+      if (match) return {sku: sku, type: 'sheet', color: COLOR_BY_CODE[match[1]] || ''};
+
+      return null;
+    }
+
+    function skuFromCard(card) {
+      var nested;
+      var value;
+      var match;
+
+      if (!card) return '';
+
+      value = normalizeSku(getAttr(card, ['data-selfles-sku', 'data-product-sku', 'data-sku', 'data-product-lid', 'data-product-uid']));
+      if (value && !/^\d+$/.test(value) && parseSku(value)) return value;
+
+      nested = card.querySelector('.js-product-sku, .js-store-prod-sku, .t-store__card__sku, [data-product-sku], [data-sku]');
+      if (nested) {
+        value = normalizeSku(getAttr(nested, ['data-product-sku', 'data-sku', 'data-selfles-sku']) || getText(nested));
+        if (value && !/^\d+$/.test(value) && parseSku(value)) return value;
+      }
+
+      match = String(card.textContent || '').toUpperCase().match(/\b(?:N[PGCBSW]-?BAM\d+|P(?:160|180|KS|EUR)[PGCBSW]-?BAM\d+|PP(?:150|180|220)?[PGCBSW]-?BAM\d+)\b/);
+
+      return match ? normalizeSku(match[0]) : '';
+    }
+
+    function renameCardTitleToColor(card) {
+      var parsed;
+      var title;
+      var original;
+      var label;
+
+      if (!card) return;
+      if (card.classList.contains('js-product-relevant')) return;
+      if (card.classList.contains('selfles-related-card')) return;
+      if (closest(card, '.t-store__prod-popup, .t-store__product-popup, .t-store__product-snippet, .t-store__cart, .t706')) return;
+
+      parsed = parseSku(skuFromCard(card));
+      if (!parsed || !parsed.color || !COLOR_LABELS[parsed.color]) return;
+      if (!(parsed.type === 'pillowcase' || parsed.type === 'duvet' || parsed.type === 'sheet')) return;
+
+      title = card.querySelector('.t-store__card__title, .js-product-name, .js-store-prod-name');
+      if (!title) return;
+
+      label = COLOR_LABELS[parsed.color];
+      original = title.getAttribute('data-selfles-card-title-original') || title.getAttribute('data-selfles-title-raw') || getText(title);
+
+      if (original && original !== label) {
+        title.setAttribute('data-selfles-card-title-original', original);
+      }
+
+      if (getText(title) !== label) {
+        title.textContent = label;
+      }
+
+      title.setAttribute('data-selfles-card-title-mode', 'color');
+      card.setAttribute('data-selfles-card-title-mode', 'color');
+      card.setAttribute('data-selfles-card-color', parsed.color);
+    }
+
+    function applyCatalogCardColorTitles() {
+      if (!isCatalogPage()) return;
+
+      all('.js-product.t-store__card:not(.js-product-relevant), .t-store__card:not(.js-product-relevant)').forEach(renameCardTitleToColor);
     }
 
     function stripProductTitleMarkers(value) {
@@ -99,6 +236,7 @@
       var clean;
 
       if (!el) return;
+      if (el.getAttribute('data-selfles-card-title-mode') === 'color') return;
       if (el.closest('.t-store__prod-popup, .t-store__prod-snippet, .selfles-product-main-layout__info')) return;
 
       raw = el.textContent || '';
@@ -255,6 +393,7 @@
 
     function applySelflesCatalogEnhancements() {
       applySelflesTitleBacktickCleaner();
+      applyCatalogCardColorTitles();
       applySelflesCatalogUiFixes();
     }
 
@@ -275,6 +414,9 @@
       setTimeout(applySelflesCatalogEnhancements, 900);
       setTimeout(applySelflesCatalogEnhancements, 1500);
     });
+
+    window.addEventListener('selfles:products-manifest-ready', applySelflesCatalogEnhancements);
+    window.addEventListener('selfles:live-products-ready', applySelflesCatalogEnhancements);
 
     if ('MutationObserver' in window && document.body) {
       new MutationObserver(scheduleSelflesTitleBacktickCleaner).observe(document.body, {
