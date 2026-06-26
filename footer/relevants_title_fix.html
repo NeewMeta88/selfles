@@ -1,0 +1,41 @@
+<style>
+  /* ===== SELFLES: product page related title override ===== */
+  body.selfles-product-page .selfles-related-fallback,
+  body.selfles-product-page .t-store__relevants__container.selfles-related-fallback,
+  body.selfles-product-page .t-store__relevants,
+  body.selfles-product-page .t-store__relevants__container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  body.selfles-product-page .t-store__relevants__title,
+  body.selfles-product-page .t-store__relevants__title.t-uptitle,
+  body.selfles-product-page .t-store__relevants__title.t-uptitle_xxl,
+  body.selfles-product-page .selfles-related-fallback .t-store__relevants__title,
+  body.selfles-product-page .selfles-related-fallback .t-store__relevants__title.t-uptitle,
+  body.selfles-product-page .selfles-related-fallback .t-store__relevants__title.t-uptitle_xxl {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    margin-bottom: 32px !important;
+    font-family: "Selfles Oswald Medium", "Inter", "Oswald", Arial, sans-serif !important;
+    font-style: normal !important;
+    font-weight: 500 !important;
+    font-size: clamp(40px, 4.45vw, 64px) !important;
+    line-height: 1 !important;
+    color: #EE413C !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+  }
+
+  @media screen and (max-width: 960px) {
+    body.selfles-product-page .t-store__relevants__title,
+    body.selfles-product-page .t-store__relevants__title.t-uptitle,
+    body.selfles-product-page .t-store__relevants__title.t-uptitle_xxl,
+    body.selfles-product-page .selfles-related-fallback .t-store__relevants__title,
+    body.selfles-product-page .selfles-related-fallback .t-store__relevants__title.t-uptitle,
+    body.selfles-product-page .selfles-related-fallback .t-store__relevants__title.t-uptitle_xxl {
+      margin-bottom: 22px !important;
+      font-size: clamp(30px, 8vw, 44px) !important;
+    }
+  }
+</style>
