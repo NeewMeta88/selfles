@@ -4197,3 +4197,53 @@ body.selfles-main-catalog-rows-page .selfles-main-store-arrow_next::before {
         height: 25px !important;
     }
 }
+
+/* SELFLES MAIN: keep slider arrow buttons perfectly circular */
+body.selfles-main-catalog-rows-page #allrecords .selfles-main-store-arrow,
+body.selfles-main-catalog-rows-page .selfles-main-store-arrow {
+    box-sizing: border-box !important;
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px !important;
+    min-height: 72px !important;
+    max-width: 72px !important;
+    max-height: 72px !important;
+    aspect-ratio: 1 / 1 !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+}
+
+body.selfles-main-catalog-rows-page #allrecords .selfles-main-store-arrow::before,
+body.selfles-main-catalog-rows-page .selfles-main-store-arrow::before {
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+@media screen and (max-width: 1200px) {
+    body.selfles-main-catalog-rows-page #allrecords .selfles-main-store-arrow,
+    body.selfles-main-catalog-rows-page .selfles-main-store-arrow {
+        width: 56px !important;
+        height: 56px !important;
+        min-width: 56px !important;
+        min-height: 56px !important;
+        max-width: 56px !important;
+        max-height: 56px !important;
+        padding: 0 !important;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    body.selfles-main-catalog-rows-page #allrecords .selfles-main-store-arrow,
+    body.selfles-main-catalog-rows-page .selfles-main-store-arrow {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        max-width: 44px !important;
+        max-height: 44px !important;
+        padding: 0 !important;
+    }
+}
+
