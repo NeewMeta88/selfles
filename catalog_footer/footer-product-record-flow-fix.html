@@ -56,6 +56,44 @@ body.selfles-product-page #t-footer {
   position: relative !important;
   z-index: 1 !important;
 }
+
+@media screen and (max-width: 960px) {
+  html body.selfles-product-page .selfles-buy-zone > .t-store__prod-popup__btn-wrapper.t-store__prod-popup__btn-wrapper-fixed,
+  html body.selfles-product-page .selfles-buy-zone > .t-store__prod__btn-wrapper.t-store__prod-popup__btn-wrapper-fixed,
+  html body.selfles-product-page .selfles-buy-zone > .js-store-prod-popup-buy-btn-wrapper.t-store__prod-popup__btn-wrapper-fixed {
+    position: static !important;
+    inset: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    z-index: auto !important;
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 12px 0 0 !important;
+    transform: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body.selfles-product-page .selfles-buy-zone .selfles-product-buy-button-fixed {
+    position: relative !important;
+    inset: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+  }
+
+  html body.selfles-product-page .selfles-buy-zone {
+    padding-bottom: 0 !important;
+  }
+}
 </style>
 <script>
 (function () {
@@ -194,6 +232,50 @@ body.selfles-product-page #t-footer {
     return Math.min(height, MAX_SAFE_HEIGHT);
   }
 
+  function resetMobileBuyButton(root) {
+    if (!root || window.innerWidth > 960) return;
+
+    all([
+      '.selfles-buy-zone > .t-store__prod-popup__btn-wrapper-fixed',
+      '.selfles-buy-zone > .t-store__prod-popup__btn-wrapper',
+      '.selfles-buy-zone > .t-store__prod__btn-wrapper',
+      '.selfles-buy-zone > .js-store-prod-popup-buy-btn-wrapper'
+    ].join(','), root).forEach(function (node) {
+      node.style.setProperty('position', 'static', 'important');
+      node.style.setProperty('inset', 'auto', 'important');
+      node.style.setProperty('left', 'auto', 'important');
+      node.style.setProperty('right', 'auto', 'important');
+      node.style.setProperty('top', 'auto', 'important');
+      node.style.setProperty('bottom', 'auto', 'important');
+      node.style.setProperty('z-index', 'auto', 'important');
+      node.style.setProperty('display', 'block', 'important');
+      node.style.setProperty('width', 'auto', 'important');
+      node.style.setProperty('max-width', 'none', 'important');
+      node.style.setProperty('height', 'auto', 'important');
+      node.style.setProperty('min-height', '0px', 'important');
+      node.style.setProperty('padding', '0px', 'important');
+      node.style.setProperty('margin', '12px 0px 0px', 'important');
+      node.style.setProperty('transform', 'none', 'important');
+      node.style.setProperty('background', 'transparent', 'important');
+      node.style.setProperty('box-shadow', 'none', 'important');
+    });
+
+    all([
+      '.selfles-buy-zone .selfles-product-buy-button-fixed',
+      '.selfles-buy-zone .t-store__prod-popup__btn',
+      '.selfles-buy-zone .t-store__prod__btn',
+      '.selfles-buy-zone .js-store-prod-popup-buy-btn'
+    ].join(','), root).forEach(function (node) {
+      node.style.setProperty('position', 'relative', 'important');
+      node.style.setProperty('inset', 'auto', 'important');
+      node.style.setProperty('left', 'auto', 'important');
+      node.style.setProperty('right', 'auto', 'important');
+      node.style.setProperty('top', 'auto', 'important');
+      node.style.setProperty('bottom', 'auto', 'important');
+      node.style.setProperty('transform', 'none', 'important');
+    });
+  }
+
   function applyProductRecordFlowFix() {
     var root;
     var product;
@@ -212,6 +294,7 @@ body.selfles-product-page #t-footer {
     if (document.body) document.body.classList.add('selfles-product-page');
 
     forceRecordPosition(root);
+    resetMobileBuyButton(root);
 
     [
       root,
