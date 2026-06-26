@@ -1,0 +1,86 @@
+<style>
+  body.selfles-main-catalog-rows-page .selfles-main-store-ready .t-store__load-more-btn-wrap,
+  body.selfles-main-catalog-rows-page .selfles-main-store-ready .js-store-load-more-btn-wrap{position:absolute!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-viewport{position:relative!important;overflow:hidden!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-track{display:flex!important;flex-wrap:nowrap!important;align-items:flex-start!important;will-change:transform!important;transition:transform .28s ease!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-track>.t-clear,
+  body.selfles-main-catalog-rows-page .selfles-main-store-track>.t-store__grid-separator{display:none!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-arrow{position:absolute!important;top:50%!important;z-index:50!important;display:flex!important;align-items:center!important;justify-content:center!important;width:72px!important;height:72px!important;min-width:72px!important;min-height:72px!important;padding:0 0 6px!important;border:2px solid #EE413C!important;border-radius:999px!important;background:rgba(255,255,255,.94)!important;color:#EE413C!important;box-shadow:none!important;transform:translateY(-50%)!important;cursor:pointer!important;pointer-events:auto!important;appearance:none!important;-webkit-appearance:none!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-arrow_prev{left:16px!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-arrow_next{right:16px!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-arrow::before{display:block!important;font-family:Arial,sans-serif!important;font-size:54px!important;line-height:1!important;font-weight:400!important;color:#EE413C!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-arrow_prev::before{content:"\2190"!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-arrow_next::before{content:"\2192"!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-arrow:disabled{opacity:.28!important;cursor:default!important;pointer-events:none!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-arrow.is-loading::before{opacity:0!important}
+  body.selfles-main-catalog-rows-page .selfles-main-store-arrow.is-loading::after{content:""!important;position:absolute!important;left:50%!important;top:50%!important;width:26px!important;height:26px!important;margin:-13px 0 0 -13px!important;border:2px solid rgba(238,65,60,.28)!important;border-top-color:#EE413C!important;border-radius:50%!important;animation:selflesMainArrowSpin .7s linear infinite!important}
+  @keyframes selflesMainArrowSpin{to{transform:rotate(360deg)}}
+  @media screen and (max-width:1200px){body.selfles-main-catalog-rows-page .selfles-main-store-arrow{width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;padding-bottom:5px!important}body.selfles-main-catalog-rows-page .selfles-main-store-arrow::before{font-size:42px!important}body.selfles-main-catalog-rows-page .selfles-main-store-arrow_prev{left:10px!important}body.selfles-main-catalog-rows-page .selfles-main-store-arrow_next{right:10px!important}}
+  @media screen and (max-width:640px){body.selfles-main-catalog-rows-page .selfles-main-store-arrow{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;border-width:1.5px!important;padding-bottom:4px!important}body.selfles-main-catalog-rows-page .selfles-main-store-arrow::before{font-size:34px!important}}
+</style>
+<script>
+(function(){
+  var INIT='data-selfles-main-catalog-rows-v1';
+  if(document.documentElement.getAttribute(INIT)==='1')return;
+  document.documentElement.setAttribute(INIT,'1');
+
+  var TECH={rec2310894021:1,rec2397921511:1,rec1653024161:1,rec1556696391:1,rec2417486561:1};
+  var LABEL={pink:'Розовый',green:'Зелёный',coffee:'Кофейный',blue:'Голубой',cream:'Сливочный',white:'Белый'};
+  var CODE={P:'pink',G:'green',C:'coffee',B:'blue',S:'cream',W:'white'};
+
+  function path(){return location.pathname.replace(/\/+$/,'')||'/';}
+  function alias(){var r=document.querySelector('#allrecords');return r?String(r.getAttribute('data-tilda-page-alias')||''):'';}
+  function isMain(){var p=path(),a=alias();return p==='/'||p==='/page94832776.html'||a==='main'||a==='home'||a==='index';}
+  function all(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+  function closest(n,s){return n&&n.closest?n.closest(s):null;}
+  function txt(n){return n?String(n.textContent||'').replace(/\s+/g,' ').trim():'';}
+  function attr(n,a){for(var i=0,v;i<a.length;i++){v=n&&n.getAttribute?n.getAttribute(a[i]):'';if(v!==null&&v!==undefined&&String(v).trim()!=='')return String(v).trim();}return'';}
+  function cleanSku(v){var s=String(v||'').replace(/^\s*(sku|артикул|арт\.?|art\.?|vendor\s+code)\s*:?\s*/i,'').trim().toUpperCase(),al=window.SELFLES_SKU_ALIASES||{};return String(al[s]||al[s.replace(/\s+/g,'')]||s).trim().toUpperCase();}
+  function parseSku(v){var ext=window.SELFLES_PRODUCT_DATA&&window.SELFLES_PRODUCT_DATA.parseSku,s=cleanSku(v),m;if(typeof ext==='function'){try{m=ext(s);if(m&&m.type&&m.color)return m;}catch(e){}}
+    m=s.match(/^N([PGCBSW])-?/);if(m)return{sku:s,type:'pillowcase',color:CODE[m[1]]||''};
+    m=s.match(/^PP(?:150|180|220)([PGCBSW])-?/);if(m)return{sku:s,type:'duvet',color:CODE[m[1]]||''};
+    m=s.match(/^PP([PGCBSW])-?/);if(m)return{sku:s,type:'duvet',color:CODE[m[1]]||''};
+    m=s.match(/^P(?:160|180|KS|EUR)([PGCBSW])-?/);if(m)return{sku:s,type:'sheet',color:CODE[m[1]]||''};
+    return null;
+  }
+  function skuByUid(uid){var u=String(uid||'').trim(),man=window.SELFLES_PRODUCTS_BY_SKU||{},dbg=window.SELFLES_STOCK_DEBUG&&window.SELFLES_STOCK_DEBUG.stockCache,ks,k,it,id;if(!u)return'';if(dbg&&dbg[u]&&dbg[u].sku)return cleanSku(dbg[u].sku);ks=Object.keys(man);for(var i=0;i<ks.length;i++){k=ks[i];it=man[k]||{};id=String(it.tildaUid||it.uid||it.product_uid||it.productUid||it.gen_uid||it.genUid||it['Tilda UID']||'').trim();if(id===u)return cleanSku(it.sku||k);}return'';}
+  function skuFromCard(c){var n,v,m,ids=[],link,url;if(!c)return'';
+    n=c.querySelector('.js-product-sku,.js-store-prod-sku,.t-store__card__sku,[data-product-sku],[data-sku]');
+    if(n){v=cleanSku(attr(n,['data-product-sku','data-sku','data-selfles-sku'])||txt(n));if(v&&!/^\d+$/.test(v)&&parseSku(v))return v;}
+    v=cleanSku(attr(c,['data-selfles-sku','data-product-sku','data-sku']));if(v&&!/^\d+$/.test(v)&&parseSku(v))return v;
+    ['data-product-gen-uid','data-product-uid','data-product-lid'].forEach(function(name){var id=c.getAttribute&&c.getAttribute(name);if(id)ids.push(id);});
+    String(c.getAttribute&&c.getAttribute('data-product-part-uid')||'').split(',').forEach(function(id){if(id)ids.push(id.trim());});
+    link=c.querySelector('a[href*="/tproduct/"],a[href*="/catalog/tproduct/"],a[href*="/product/"]');url=attr(c,['data-product-url'])||(link&&(link.getAttribute('href')||link.href))||'';m=String(url).match(/\/tproduct\/(\d+)-/);if(m)ids.push(m[1]);
+    for(var i=0;i<ids.length;i++){v=skuByUid(ids[i]);if(v&&parseSku(v))return v;}
+    m=String(c.textContent||'').toUpperCase().match(/\b(?:N[PGCBSW]-?BAM\d+|P(?:160|180|KS|EUR)[PGCBSW]-?BAM\d+|PP(?:150|180|220)?[PGCBSW]-?BAM\d+)\b/);
+    return m?cleanSku(m[0]):'';
+  }
+  function rename(c){var p,title,label,orig;if(!c||c.classList.contains('js-product-relevant')||c.classList.contains('selfles-related-card'))return;if(closest(c,'.t-store__prod-popup,.t-store__product-popup,.t-store__product-snippet,.t-store__cart,.t706'))return;p=parseSku(skuFromCard(c));if(!p||!p.color||!LABEL[p.color])return;if(!(p.type==='pillowcase'||p.type==='duvet'||p.type==='sheet'))return;title=c.querySelector('.t-store__card__title,.js-product-name,.js-store-prod-name');if(!title)return;label=LABEL[p.color];orig=title.getAttribute('data-selfles-card-title-original')||title.getAttribute('data-selfles-title-raw')||txt(title);if(orig&&orig!==label)title.setAttribute('data-selfles-card-title-original',orig);if(txt(title)!==label)title.textContent=label;title.setAttribute('data-selfles-card-title-mode','color');c.setAttribute('data-selfles-card-title-mode','color');c.setAttribute('data-selfles-card-color',p.color);}
+  function applyLabels(r){if(!isMain())return;all('.js-product.t-store__card:not(.js-product-relevant),.t-store__card:not(.js-product-relevant)',r||document).forEach(rename);}
+  function visible(r){var cs,bb;if(!r||!window.getComputedStyle)return true;cs=getComputedStyle(r);bb=r.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&bb.width>0&&bb.height>0;}
+  function grid(rec){var gs=all('.js-store-grid-cont',rec).filter(function(g){return!g.classList.contains('js-store-grid-cont-preloader')&&!g.classList.contains('js-store-parts-select-container');});return gs.find(function(g){return g.querySelector('.t-store__card-list,.js-product.t-store__card,.t-store__card');})||gs[0]||null;}
+  function absorb(g,t){if(!g||!t)return;Array.prototype.slice.call(g.children).forEach(function(n){if(n!==t&&n.matches&&n.matches('.js-product.t-store__card,.t-store__card,.t-clear,.t-store__grid-separator'))t.appendChild(n);});}
+  function track(g){var t,ns;if(!g)return null;t=g.querySelector('.t-store__card-list');if(t){absorb(g,t);return t;}ns=Array.prototype.slice.call(g.children).filter(function(n){return n.matches&&n.matches('.js-product.t-store__card,.t-store__card,.t-clear,.t-store__grid-separator');});if(!ns.length)return null;t=document.createElement('div');t.className='t-store__card-list';g.insertBefore(t,ns[0]);ns.forEach(function(n){t.appendChild(n);});return t;}
+  function cards(t){return t?Array.prototype.slice.call(t.children).filter(function(n){return n.matches&&n.matches('.js-product.t-store__card,.t-store__card')&&!n.classList.contains('js-product-relevant');}):[];}
+  function perView(){return window.matchMedia&&window.matchMedia('(max-width:640px)').matches?2:3;}
+  function lmBtn(r){return r.querySelector('.js-store-load-more-btn,.t-store__load-more-btn');}
+  function lmWrap(r){return r.querySelector('.t-store__load-more-btn-wrap,.js-store-load-more-btn-wrap');}
+  function hidden(el){return el&&(String(el.style.display).toLowerCase()==='none'||String(el.style.visibility).toLowerCase()==='hidden'||el.classList.contains('t-store__load-more-btn_hidden'));}
+  function canMore(r){var b=lmBtn(r),w=lmWrap(r);return!!(b&&!b.disabled&&!hidden(b)&&!hidden(w));}
+  function arrow(type){var b=document.createElement('button');b.type='button';b.className='selfles-main-store-arrow selfles-main-store-arrow_'+type;b.setAttribute('aria-label',type==='next'?'Следующие товары':'Предыдущие товары');return b;}
+  function waitChange(r,g,t,before,done){var start=Date.now();(function check(){absorb(g,t);applyLabels(t);if(cards(t).length>before||!canMore(r)||Date.now()-start>2500){done();return;}setTimeout(check,100);})();}
+  function setup(rec){var g,t,prev,next,state;if(!rec||TECH[rec.id]||!visible(rec)||rec.getAttribute('data-selfles-main-store-ready')==='1')return;g=grid(rec);t=track(g);if(!g||!t||!cards(t).length)return;rec.setAttribute('data-selfles-main-store-ready','1');rec.classList.add('selfles-main-store-ready');g.classList.add('selfles-main-store-viewport');t.classList.add('selfles-main-store-track');applyLabels(t);prev=arrow('prev');next=arrow('next');g.appendChild(prev);g.appendChild(next);state={index:0,loading:false,timer:null};
+    function refresh(){var pv,cs,more,max,off;absorb(g,t);applyLabels(t);pv=perView();cs=cards(t);more=canMore(rec);max=Math.max(0,cs.length-pv);if(!cs.length)return;if(cs.length<=pv&&!more){state.index=0;t.style.setProperty('transform','translate3d(0,0,0)','important');t.style.setProperty('justify-content','center','important');prev.style.display='none';next.style.display='none';prev.disabled=true;next.disabled=true;next.classList.remove('is-loading');next.setAttribute('aria-busy','false');return;}t.style.removeProperty('justify-content');if(state.index>max)state.index=max;off=cs[state.index]?cs[state.index].offsetLeft-cs[0].offsetLeft:0;t.style.setProperty('transform','translate3d('+(-off)+'px,0,0)','important');prev.disabled=state.index<=0;next.classList.toggle('is-loading',!!state.loading);next.setAttribute('aria-busy',state.loading?'true':'false');next.disabled=!state.loading&&state.index>=max&&!more;prev.style.display='';next.style.display='';}
+    function go(dir){var pv=perView(),cs=cards(t),max=Math.max(0,cs.length-pv),before,b;if(state.loading)return;if(dir>0&&state.index>=max&&canMore(rec)){b=lmBtn(rec);before=cs.length;state.loading=true;refresh();b.click();waitChange(rec,g,t,before,function(){state.loading=false;cs=cards(t);max=Math.max(0,cs.length-pv);state.index=Math.min(state.index+pv,max);refresh();});return;}state.index=dir>0?Math.min(state.index+pv,max):Math.max(state.index-pv,0);refresh();}
+    prev.addEventListener('click',function(){go(-1);});next.addEventListener('click',function(){go(1);});window.addEventListener('resize',function(){clearTimeout(state.timer);state.timer=setTimeout(refresh,120);});rec._selflesMainStoreRefresh=refresh;refresh();setTimeout(refresh,400);setTimeout(refresh,1200);
+  }
+  function run(){if(!isMain())return;document.body.classList.add('selfles-main-catalog-rows-page');applyLabels();all('.t-rec').forEach(function(r){if(r.querySelector('.t-store,.js-store')&&r.querySelector('.js-store-grid-cont')){setup(r);if(typeof r._selflesMainStoreRefresh==='function')r._selflesMainStoreRefresh();}});}
+  function schedule(){clearTimeout(schedule.t);schedule.t=setTimeout(run,150);}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+  window.addEventListener('load',function(){run();setTimeout(run,500);setTimeout(run,1500);setTimeout(run,3000);});
+  window.addEventListener('resize',function(){setTimeout(run,200);});
+  window.addEventListener('selfles:products-manifest-ready',run);
+  window.addEventListener('selfles:live-products-ready',run);
+  if('MutationObserver'in window&&document.body)new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
+})();
+</script>
