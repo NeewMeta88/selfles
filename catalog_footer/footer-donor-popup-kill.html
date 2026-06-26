@@ -1,6 +1,22 @@
 <style>
 #rec2417486561 .t-popup,
 #rec2417486561 .t-popup__container{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+
+/* ===== SELFLES: remove white gap from hidden donor/catalog blocks on product pages ===== */
+body.selfles-product-page #rec2397921511,
+body.selfles-product-page [data-selfles-donor-popup],
+body.selfles-product-page [data-selfles-catalog-donor],
+body.selfles-product-page .selfles-donor-popup,
+body.selfles-product-page .selfles-catalog-donor,
+body.selfles-product-page .selfles-hidden-donor {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
 </style>
 <script>
 (function(){
@@ -25,4 +41,82 @@
   window.addEventListener('load',function(){hideDonorPopups();[100,300,800,1500,3000].forEach(function(delay){setTimeout(hideDonorPopups,delay);});});
   if('MutationObserver'in window){new MutationObserver(function(){clearTimeout(hideDonorPopups.timer);hideDonorPopups.timer=setTimeout(hideDonorPopups,50);}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});}
 }());
+</script>
+<script>
+(function () {
+  var INIT_ATTR = 'data-selfles-white-gap-fix-v1';
+
+  if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
+  document.documentElement.setAttribute(INIT_ATTR, '1');
+
+  function isProductPage() {
+    return (
+      location.pathname.indexOf('/catalog/tproduct/') !== -1 ||
+      location.pathname.indexOf('/tproduct/') !== -1 ||
+      location.pathname.indexOf('/product/') !== -1
+    );
+  }
+
+  function collapseElement(el) {
+    if (!el || el.getAttribute('data-selfles-gap-collapsed') === '1') return;
+
+    el.setAttribute('data-selfles-gap-collapsed', '1');
+
+    el.style.setProperty('display', 'none', 'important');
+    el.style.setProperty('height', '0', 'important');
+    el.style.setProperty('min-height', '0', 'important');
+    el.style.setProperty('max-height', '0', 'important');
+    el.style.setProperty('margin', '0', 'important');
+    el.style.setProperty('padding', '0', 'important');
+    el.style.setProperty('overflow', 'hidden', 'important');
+  }
+
+  function fixWhiteGap() {
+    if (!isProductPage()) return;
+    if (!document.body) return;
+
+    document.body.classList.add('selfles-product-page');
+
+    [
+      '#rec2397921511',
+      '[data-selfles-donor-popup]',
+      '[data-selfles-catalog-donor]',
+      '.selfles-donor-popup',
+      '.selfles-catalog-donor',
+      '.selfles-hidden-donor'
+    ].forEach(function (selector) {
+      document.querySelectorAll(selector).forEach(collapseElement);
+    });
+
+    document.querySelectorAll('.t-rec').forEach(function (rec) {
+      var rect = rec.getBoundingClientRect();
+      var styles = window.getComputedStyle(rec);
+
+      var isInvisible =
+        styles.visibility === 'hidden' ||
+        Number(styles.opacity) === 0 ||
+        rec.getAttribute('aria-hidden') === 'true';
+
+      if (rect.height > 700 && isInvisible) {
+        collapseElement(rec);
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fixWhiteGap);
+  } else {
+    fixWhiteGap();
+  }
+
+  setTimeout(fixWhiteGap, 300);
+  setTimeout(fixWhiteGap, 1000);
+  setTimeout(fixWhiteGap, 2000);
+
+  new MutationObserver(fixWhiteGap).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true
+  });
+})();
 </script>
