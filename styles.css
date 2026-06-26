@@ -3944,3 +3944,8 @@ body.selfles-product-page .selfles-buy-zone .t-store__prod__quantity-input {
     min-height: 26px !important;
     line-height: 26px !important;
 }
+
+.t-store__relevants__title{
+    font-family: 'Selfles Oswald Medium' !important;
+    margin-top: 0px !important;
+}
