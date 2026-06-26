@@ -302,10 +302,159 @@
             });
         }
 
+        function isProductPage() {
+            var path = location.pathname.replace(/\/+$/, '');
+            return path.indexOf('/catalog/tproduct/') !== -1 ||
+                path.indexOf('/tproduct/') !== -1 ||
+                path.indexOf('/product/') !== -1 ||
+                !!(document.body && document.body.classList.contains('selfles-product-page'));
+        }
+
+        function getProductInfoRoot() {
+            return document.querySelector([
+                '.selfles-product-main-layout__info',
+                '.t-store__prod-popup__info',
+                '.t-store__prod__info',
+                '.t-store__prod-snippet__info'
+            ].join(','));
+        }
+
+        function visibleText(el) {
+            return String(el ? el.textContent || '' : '')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function currentProductType(root) {
+            var sku = '';
+
+            if (!root) return '';
+
+            sku = root.querySelector('.selfles-product-options[data-selfles-sku]') ?
+                root.querySelector('.selfles-product-options[data-selfles-sku]').getAttribute('data-selfles-sku') : '';
+
+            sku = cleanSku(sku || visibleText(root.querySelector('.js-product-sku, .js-store-prod-sku, .t-store__prod-popup__sku, .t-store__prod__sku')));
+
+            if (/^N[PGCBSW]-?BAM/i.test(sku)) return 'pillowcase';
+            if (/^PP/i.test(sku)) return 'duvet';
+            if (/^P(?:160|180|KS|EUR)/i.test(sku)) return 'sheet';
+
+            return '';
+        }
+
+        function productDetailsParagraphs(type, root) {
+            var shortText = visibleText(root && root.querySelector('.js-store-prod-all-text'));
+            var common = 'Выполнено из 100% бамбукового волокна — натурального экологичного материала, мягкого и гладкого, как шёлк, но более практичного в уходе и использовании. Гипоаллергенный материал бережно заботится о коже и волосах, обеспечивает комфортный микроклимат: прохладу летом и уютное тепло зимой.';
+            var ending = 'Сочетайте разные цвета и размеры или выбирайте однотонный комплект — создайте свой идеальный сет под настроение. Яркая подарочная упаковка с покрытием soft touch делает selfles отличным выбором для себя и близких.';
+            var specific = '';
+            var result = [];
+
+            if (type === 'duvet') {
+                specific = 'Пододеяльник комфортно ощущается на коже, красиво драпируется и помогает сохранять аккуратный вид спального комплекта.';
+            } else if (type === 'pillowcase') {
+                specific = 'Комплект из двух наволочек 50×70 см мягко соприкасается с кожей и волосами, поддерживая ощущение свежести и лёгкости.';
+            } else if (type === 'sheet') {
+                specific = 'Простыня мягко ложится на матрас, приятна к телу и дополняет комплект спокойной тактильной роскошью.';
+            }
+
+            if (shortText) result.push(shortText);
+            result.push(common);
+            if (specific) result.push(specific);
+            result.push(ending);
+
+            return result;
+        }
+
+        function careParagraphs() {
+            return [
+                'Стирать на деликатном режиме при температуре не выше 30°С.',
+                'Использовать мягкие средства без отбеливателей.',
+                'Не сушить в барабане и не отдавать в химчистку.',
+                'Гладить при температуре до 110°С.',
+                'Сушить естественным способом.'
+            ];
+        }
+
+        function createDetailsItem(titleText, paragraphs, isOpen) {
+            var item = document.createElement('div');
+            var title = document.createElement('button');
+            var body = document.createElement('div');
+
+            item.className = 'selfles-product-details__item' + (isOpen ? ' is-open' : '');
+            title.className = 'selfles-product-details__title';
+            title.type = 'button';
+            title.textContent = titleText;
+            title.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            body.className = 'selfles-product-details__body';
+
+            paragraphs.forEach(function (text) {
+                var p = document.createElement('p');
+                p.textContent = text;
+                body.appendChild(p);
+            });
+
+            title.addEventListener('click', function () {
+                var opened = item.classList.toggle('is-open');
+                title.setAttribute('aria-expanded', opened ? 'true' : 'false');
+            });
+
+            item.appendChild(title);
+            item.appendChild(body);
+            return item;
+        }
+
+        function normalizeProductDetails() {
+            var root;
+            var nativeTabs;
+            var existingFallback;
+            var type;
+            var anchor;
+            var details;
+
+            if (!isProductPage()) return;
+
+            root = getProductInfoRoot();
+            if (!root) return;
+
+            nativeTabs = root.querySelector([
+                '.t-store__tabs',
+                '.t-store__tabs__wrapper',
+                '.t-store__prod-popup__tabs',
+                '.t-store__prod__tabs'
+            ].join(','));
+
+            existingFallback = root.querySelector('.selfles-product-details[data-selfles-details-fallback="1"]');
+
+            if (nativeTabs) {
+                if (existingFallback) existingFallback.remove();
+                return;
+            }
+
+            if (existingFallback) return;
+
+            type = currentProductType(root);
+            anchor = root.querySelector('.selfles-buy-zone') ||
+                root.querySelector('.js-store-price-wrapper') ||
+                root.querySelector('.js-store-prod-text') ||
+                root.lastElementChild;
+
+            if (!anchor) return;
+
+            details = document.createElement('div');
+            details.className = 'selfles-product-details';
+            details.setAttribute('data-selfles-details-fallback', '1');
+            details.appendChild(createDetailsItem('Подробнее', productDetailsParagraphs(type, root), true));
+            details.appendChild(createDetailsItem('Правила ухода', careParagraphs(), false));
+
+            anchor.insertAdjacentElement('afterend', details);
+        }
+
         function applyCleaner() {
             ensureStyle();
             collectRawTitleMaps();
             normalizePrices();
+            normalizeProductDetails();
 
             all([
                 '.js-product.t-store__card .t-store__card__title',
