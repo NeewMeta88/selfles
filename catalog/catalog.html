@@ -23,6 +23,16 @@
       W: 'white'
     };
 
+    var PRODUCT_OPTIONS_BLOCKLIST = {
+      BL_COTO426: {
+        sku: 'BL-COTO426',
+        paths: {
+          '/tproduct/529727686502-pled-anchovys-club-x-selfles': true,
+          '/catalog/tproduct/529727686502-pled-anchovys-club-x-selfles': true
+        }
+      }
+    };
+
     function isProductPage() {
       return location.pathname.indexOf('/catalog/tproduct/') !== -1 ||
               location.pathname.indexOf('/tproduct/') !== -1 ||
@@ -118,6 +128,47 @@
       match = String(card.textContent || '').toUpperCase().match(/\b(?:N[PGCBSW]-?BAM\d+|P(?:160|180|KS|EUR)[PGCBSW]-?BAM\d+|PP(?:150|180|220)?[PGCBSW]-?BAM\d+)\b/);
 
       return match ? normalizeSku(match[0]) : '';
+    }
+
+    function isBlockedProductOptionsPage(block) {
+      var path = location.pathname.replace(/\/+$/, '') || '/';
+
+      return !!(block && block.paths && block.paths[path]);
+    }
+
+    function skuFromProductOptions(options) {
+      var hash;
+      var sku;
+
+      if (!options) return '';
+
+      sku = normalizeSku(options.getAttribute('data-selfles-sku'));
+      if (sku) return sku;
+
+      hash = String(options.getAttribute('data-selfles-variants-hash') || '');
+      if (hash.indexOf(':') !== -1) return normalizeSku(hash.split(':')[0]);
+
+      return normalizeSku(hash);
+    }
+
+    function removeBlockedProductOptions() {
+      if (!isProductPage()) return;
+
+      all('.selfles-product-options[data-selfles-sku], .selfles-product-options[data-selfles-variants-hash]').forEach(function (options) {
+        var key;
+        var block;
+        var sku = skuFromProductOptions(options);
+
+        for (key in PRODUCT_OPTIONS_BLOCKLIST) {
+          if (!Object.prototype.hasOwnProperty.call(PRODUCT_OPTIONS_BLOCKLIST, key)) continue;
+
+          block = PRODUCT_OPTIONS_BLOCKLIST[key];
+          if (sku === normalizeSku(block.sku) && isBlockedProductOptionsPage(block)) {
+            if (options.parentNode) options.parentNode.removeChild(options);
+            break;
+          }
+        }
+      });
     }
 
     function renameCardTitleToColor(card) {
@@ -386,6 +437,7 @@
     }
 
     function applySelflesCatalogUiFixes() {
+      removeBlockedProductOptions();
       ensureSelflesProductMainLayoutRoot();
       injectSelflesProductMobileBuyStyle();
       applySelflesLoadMoreText();
