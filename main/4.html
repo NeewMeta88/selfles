@@ -767,8 +767,55 @@
       }
     };
 
+    function isStaticProductAvailable(product) {
+      const quantity = product && product.quantity;
+
+      if (quantity === '' || quantity === null || quantity === undefined) return true;
+      if (/^(notlimited|unlimited)$/i.test(String(quantity))) return true;
+
+      return Number(String(quantity).replace(',', '.')) > 0;
+    }
+
+    function publishStaticProductsFallback() {
+      const availableProducts = {};
+
+      window.SELFLES_STATIC_PRODUCTS_BY_SKU = Object.assign(
+              {},
+              window.SELFLES_STATIC_PRODUCTS_BY_SKU || {},
+              STATIC_CONSTRUCTOR_PRODUCTS_BY_SKU
+      );
+      window.SELFLES_ALL_PRODUCTS_BY_SKU = Object.assign(
+              {},
+              window.SELFLES_STATIC_PRODUCTS_BY_SKU,
+              window.SELFLES_ALL_PRODUCTS_BY_SKU || {}
+      );
+
+      if (!window.SELFLES_PRODUCTS_BY_SKU || !Object.keys(window.SELFLES_PRODUCTS_BY_SKU).length) {
+        Object.keys(STATIC_CONSTRUCTOR_PRODUCTS_BY_SKU).forEach(function (sku) {
+          const product = STATIC_CONSTRUCTOR_PRODUCTS_BY_SKU[sku];
+
+          if (isStaticProductAvailable(product)) availableProducts[sku] = product;
+        });
+        window.SELFLES_PRODUCTS_BY_SKU = availableProducts;
+      }
+
+      try {
+        window.dispatchEvent(new CustomEvent('selfles:products-manifest-ready', {
+          detail: {
+            source: 'constructor-static-fallback',
+            productsCount: Object.keys(window.SELFLES_PRODUCTS_BY_SKU || {}).length,
+            allProductsCount: Object.keys(window.SELFLES_ALL_PRODUCTS_BY_SKU || {}).length,
+            staticManifest: true
+          }
+        }));
+      } catch (e) {
+      }
+    }
+
+    publishStaticProductsFallback();
+
     function getMergedProductsManifest() {
-      return Object.assign({}, STATIC_CONSTRUCTOR_PRODUCTS_BY_SKU, window.SELFLES_PRODUCTS_BY_SKU || {});
+      return Object.assign({}, STATIC_CONSTRUCTOR_PRODUCTS_BY_SKU, window.SELFLES_ALL_PRODUCTS_BY_SKU || {}, window.SELFLES_PRODUCTS_BY_SKU || {});
     }
 
     function getManifestProductUidList() {
