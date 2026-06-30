@@ -116,6 +116,6 @@ body.selfles-product-page .t-store__relevants__container .t-store__scroll-icon-w
   window.addEventListener('resize',function(){layoutRelated();fixUiTexts();});
   window.addEventListener('selfles:live-products-ready',function(){schedule(true);});
   window.addEventListener('selfles:products-manifest-ready',function(){schedule(true);});
-  if('MutationObserver'in window){new MutationObserver(function(){schedule(false);}).observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class','style','data-product-inv','data-product-url','data-selfles-related-count']});}
+  if('MutationObserver'in window){new MutationObserver(function(){schedule(false);}).observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['data-product-inv','data-product-url']});}
 }());
 </script>
