@@ -7,10 +7,10 @@
     font-display: swap;
 }
 
-#rec2310894021,
 #rec2397921511,
 #rec1653024161,
-#rec1556696391 {
+#rec1556696391,
+body:not(.selfles-product-page) #rec2310894021 {
     position: absolute !important;
     left: -99999px !important;
     top: 0 !important;
@@ -20,6 +20,24 @@
     opacity: 0 !important;
     pointer-events: none !important;
     z-index: -1 !important;
+}
+
+html[data-selfles-product-router-v1="1"] #rec2310894021,
+body.selfles-product-page #rec2310894021,
+#rec2310894021.selfles-product-flow-fixed {
+    display: block !important;
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    z-index: 2 !important;
 }
 
 /* ---------- product page: pre-hide technical meta before JS ---------- */
