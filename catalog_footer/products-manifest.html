@@ -8,7 +8,7 @@
         function dispatchReady(meta) {
             meta = meta || {};
             meta.source = meta.source || 'st315n';
-            meta.donor = meta.donor || '#rec2417486561';
+            meta.donor = meta.donor || '#rec1556696391,#rec2310894021,#rec2417486561';
             meta.staticManifest = false;
 
             try {
@@ -31,7 +31,7 @@
 
             dispatchReady(result && result.meta ? result.meta : {
                 source: 'st315n',
-                donor: '#rec2417486561',
+                donor: '#rec1556696391,#rec2310894021,#rec2417486561',
                 productsCount: window.SELFLES_PRODUCTS_BY_SKU ? Object.keys(window.SELFLES_PRODUCTS_BY_SKU).length : 0,
                 ready: document.documentElement.getAttribute('data-selfles-live-products-ready') === '1'
             });
