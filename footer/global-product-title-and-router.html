@@ -52,6 +52,11 @@
         !!(document.body && document.body.classList.contains('selfles-product-page'));
     }
 
+    function hasModernProductRuntime() {
+      return document.documentElement.getAttribute('data-selfles-product-router-v1') === '1' ||
+        document.documentElement.getAttribute('data-selfles-title-backtick-cleaner-v3') === '1';
+    }
+
     function isMainPage() {
       var path = getPath(location.href);
       var alias = getPageAlias();
@@ -386,6 +391,7 @@
       var url;
 
       if (!event || !event.target) return;
+      if (isProductPage() && hasModernProductRuntime()) return;
 
       if (
         event.type === 'click' ||
@@ -425,6 +431,7 @@
       var close;
 
       if (!event || !event.target || !event.target.closest) return;
+      if (isProductPage() && hasModernProductRuntime()) return;
 
       close = closest(event.target, [
         '.t-popup__close',
@@ -474,6 +481,8 @@
     }
 
     function applyGlobalFixes() {
+      if (isProductPage() && hasModernProductRuntime()) return;
+
       applyTitleBacktickCleaner();
       repairProductLinks(document);
     }
@@ -516,7 +525,10 @@
     });
 
     if ('MutationObserver' in window && document.body) {
-      new MutationObserver(scheduleGlobalFixes).observe(document.body, {
+      new MutationObserver(function () {
+        if (isProductPage() && hasModernProductRuntime()) return;
+        scheduleGlobalFixes();
+      }).observe(document.body, {
         childList: true,
         subtree: true,
         characterData: true

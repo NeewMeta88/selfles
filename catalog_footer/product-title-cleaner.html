@@ -10,6 +10,7 @@
         var rawTitleByClean = {};
         var observerStarted = false;
         var timer = null;
+        var applyingCleaner = false;
 
         function all(selector, root) {
             return Array.prototype.slice.call((root || document).querySelectorAll(selector));
@@ -487,15 +488,26 @@
             ].join(','), root).forEach(function (node) {
                 if (closest(node, '.selfles-product-details')) return;
 
-                node.classList.add('selfles-tilda-tabs-hidden');
-                node.setAttribute('aria-hidden', 'true');
-                node.style.setProperty('display', 'none', 'important');
-                node.style.setProperty('height', '0', 'important');
-                node.style.setProperty('min-height', '0', 'important');
-                node.style.setProperty('max-height', '0', 'important');
-                node.style.setProperty('margin', '0', 'important');
-                node.style.setProperty('padding', '0', 'important');
-                node.style.setProperty('overflow', 'hidden', 'important');
+                if (!node.classList.contains('selfles-tilda-tabs-hidden')) {
+                    node.classList.add('selfles-tilda-tabs-hidden');
+                }
+
+                if (node.getAttribute('aria-hidden') !== 'true') {
+                    node.setAttribute('aria-hidden', 'true');
+                }
+
+                [
+                    ['display', 'none'],
+                    ['height', '0'],
+                    ['min-height', '0'],
+                    ['max-height', '0'],
+                    ['margin', '0'],
+                    ['padding', '0'],
+                    ['overflow', 'hidden']
+                ].forEach(function (rule) {
+                    if (node.style.getPropertyValue(rule[0]) === rule[1]) return;
+                    node.style.setProperty(rule[0], rule[1], 'important');
+                });
             });
         }
 
@@ -574,40 +586,51 @@
         }
 
         function applyCleaner() {
-            ensureStyle();
-            collectRawTitleMaps();
-            normalizePrices();
-            normalizeProductDetails();
+            if (applyingCleaner) return;
 
-            all([
-                '.js-product.t-store__card .t-store__card__title',
-                '.js-product.t-store__card .js-product-name',
-                '.t-store__card .t-store__card__title',
-                '.t-store__card .js-product-name',
-                '.selfles-related-card__title',
+            applyingCleaner = true;
 
-                '.selfles-product-main-layout__info .t-store__prod__title',
-                '.selfles-product-main-layout__info .t-store__prod-popup__title',
-                '.selfles-product-main-layout__info .t-store__prod__name',
-                '.selfles-product-main-layout__info .t-store__prod-popup__name',
-                '.selfles-product-main-layout__info .js-store-prod-name',
-                '.selfles-product-main-layout__info .js-product-name',
-                '.selfles-product-main-layout__info .t-title',
+            try {
+                ensureStyle();
+                collectRawTitleMaps();
+                normalizePrices();
+                normalizeProductDetails();
 
-                '.t-store__prod-snippet h1',
-                '.t-store__prod-popup h1',
-                '.t-store__prod-snippet__title',
-                '.t-store__prod-popup__title',
-                '.t-store__prod-snippet__name',
-                '.t-store__prod-popup__name',
-                '.t-store__prod-snippet .js-store-prod-name',
-                '.t-store__prod-popup .js-store-prod-name',
-                '.t-popup .t-store__prod-popup__name',
-                '.t-popup .js-store-prod-name'
-            ].join(',')).forEach(applyTitle);
+                all([
+                    '.js-product.t-store__card .t-store__card__title',
+                    '.js-product.t-store__card .js-product-name',
+                    '.t-store__card .t-store__card__title',
+                    '.t-store__card .js-product-name',
+                    '.selfles-related-card__title',
+
+                    '.selfles-product-main-layout__info .t-store__prod__title',
+                    '.selfles-product-main-layout__info .t-store__prod-popup__title',
+                    '.selfles-product-main-layout__info .t-store__prod__name',
+                    '.selfles-product-main-layout__info .t-store__prod-popup__name',
+                    '.selfles-product-main-layout__info .js-store-prod-name',
+                    '.selfles-product-main-layout__info .js-product-name',
+                    '.selfles-product-main-layout__info .t-title',
+
+                    '.t-store__prod-snippet h1',
+                    '.t-store__prod-popup h1',
+                    '.t-store__prod-snippet__title',
+                    '.t-store__prod-popup__title',
+                    '.t-store__prod-snippet__name',
+                    '.t-store__prod-popup__name',
+                    '.t-store__prod-snippet .js-store-prod-name',
+                    '.t-store__prod-popup .js-store-prod-name',
+                    '.t-popup .t-store__prod-popup__name',
+                    '.t-popup .js-store-prod-name'
+                ].join(',')).forEach(applyTitle);
+            } finally {
+                setTimeout(function () {
+                    applyingCleaner = false;
+                }, 0);
+            }
         }
 
         function scheduleCleaner() {
+            if (applyingCleaner) return;
             clearTimeout(timer);
             timer = setTimeout(applyCleaner, 80);
         }
@@ -617,7 +640,26 @@
 
             observerStarted = true;
 
-            new MutationObserver(scheduleCleaner).observe(document.body, {
+            new MutationObserver(function (records) {
+                if (applyingCleaner) return;
+
+                var shouldRun = records.some(function (record) {
+                    var target = record.target;
+
+                    if (
+                        target &&
+                        target.nodeType === 1 &&
+                        target.closest &&
+                        target.closest('.selfles-product-details, .selfles-product-options, .selfles-buy-zone, .t-store__tabs, .t-slds, .t-store__prod__slider, .t-store__prod-popup__slider, .t-store__prod-snippet__gallery, .js-store-prod-slider, .selfles-related-fallback')
+                    ) {
+                        return false;
+                    }
+
+                    return record.type === 'childList' || record.type === 'characterData';
+                });
+
+                if (shouldRun) scheduleCleaner();
+            }).observe(document.body, {
                 childList: true,
                 subtree: true,
                 characterData: true
