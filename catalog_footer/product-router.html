@@ -9,6 +9,7 @@
         var lastNavUrl = '';
         var lastNavAt = 0;
         var applyTimer = null;
+        var applyingFixes = false;
 
         function all(selector, root) {
             return Array.prototype.slice.call((root || document).querySelectorAll(selector));
@@ -896,8 +897,8 @@
             return bullet;
         }
 
-        function ensureSliderThumbs(root) {
-            var images = collectProductGalleryImages(root);
+        function ensureSliderThumbs(root, preparedImages) {
+            var images = preparedImages || collectProductGalleryImages(root);
 
             if (images.length < 2) return;
 
@@ -1001,14 +1002,21 @@
             });
         }
 
-        function refreshNativeSlider(slider) {
+        function refreshNativeSlider(slider, refreshKey) {
             var recid = getRecordId(slider);
             var now = Date.now();
             var last = Number(slider.getAttribute('data-selfles-slider-refresh-at') || 0);
+            var lastKey = String(slider.getAttribute('data-selfles-slider-native-refresh-key') || '');
+            var initialized = !!slider.querySelector('.t-slds__items-wrapper[data-slider-initialized="true"], .t-slds__items-wrapper[data-swiper-initialized="true"]');
 
-            if (!recid || now - last < 350) return;
+            refreshKey = String(refreshKey || currentProductUid(slider) || 'default');
+
+            if (!recid) return;
+            if (initialized && lastKey === refreshKey) return;
+            if (now - last < 350) return;
 
             slider.setAttribute('data-selfles-slider-refresh-at', String(now));
+            slider.setAttribute('data-selfles-slider-native-refresh-key', refreshKey);
 
             try {
                 if (typeof window.t_sldsInit === 'function') {
@@ -1024,16 +1032,23 @@
         }
 
         function updateSlider(root) {
+            var images = collectProductGalleryImages(root);
+            var refreshKey = [
+                currentProductUid(root),
+                images.length,
+                images.slice(0, 4).join('|')
+            ].join('|');
+
             all([
                 '.t-store__prod__slider',
                 '.t-store__prod-popup__slider',
                 '.t-store__prod-snippet__gallery',
                 '.js-store-prod-slider'
             ].join(','), root).forEach(function (slider) {
-                refreshNativeSlider(slider);
+                refreshNativeSlider(slider, refreshKey);
             });
 
-            ensureSliderThumbs(root);
+            ensureSliderThumbs(root, images);
 
             all([
                 '.t-store__prod__slider .t-slds__thumbsbullet-wrapper',
@@ -1298,14 +1313,25 @@
         }
 
         function applyFixes() {
-            renameCatalogLoadMore();
-            repairProductLinks(document);
-            getProductRoots().forEach(fixProductRoot);
-            styleButtons(document);
-            redirectOpenedNativePopup();
+            if (applyingFixes) return;
+
+            applyingFixes = true;
+
+            try {
+                renameCatalogLoadMore();
+                repairProductLinks(document);
+                getProductRoots().forEach(fixProductRoot);
+                styleButtons(document);
+                redirectOpenedNativePopup();
+            } finally {
+                setTimeout(function () {
+                    applyingFixes = false;
+                }, 0);
+            }
         }
 
         function scheduleApplyFixes() {
+            if (applyingFixes) return;
             clearTimeout(applyTimer);
             applyTimer = setTimeout(applyFixes, 50);
         }
@@ -1400,6 +1426,8 @@
 
         if ('MutationObserver' in window && document.documentElement) {
             new MutationObserver(function (records) {
+                if (applyingFixes) return;
+
                 var shouldApply = records.some(function (record) {
                     var target = record.target;
 
@@ -1407,7 +1435,7 @@
                         target &&
                         target.nodeType === 1 &&
                         target.closest &&
-                        target.closest('.t-store__relevants__container, #t-footer, .t396, .selfles-buy-zone')
+                        target.closest('.t-store__relevants__container, #t-footer, .t396, .selfles-buy-zone, .selfles-product-options, .t-slds, .t-store__prod__slider, .t-store__prod-popup__slider, .t-store__prod-snippet__gallery, .js-store-prod-slider, .selfles-product-main-layout__info, .selfles-product-main-layout__gallery')
                     ) {
                         return false;
                     }
@@ -1426,6 +1454,13 @@
 
                     return Array.prototype.slice.call(record.addedNodes || []).some(function (node) {
                         if (!node || node.nodeType !== 1) return false;
+
+                        if (
+                            node.closest &&
+                            node.closest('.selfles-buy-zone, .selfles-product-options, .t-slds, .t-store__prod__slider, .t-store__prod-popup__slider, .t-store__prod-snippet__gallery, .js-store-prod-slider, .selfles-product-main-layout__info, .selfles-product-main-layout__gallery')
+                        ) {
+                            return false;
+                        }
 
                         if (
                             node.matches &&

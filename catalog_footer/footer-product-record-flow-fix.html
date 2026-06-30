@@ -98,6 +98,7 @@ body.selfles-product-page #t-footer {
   var DONOR_ID = 'rec2417486561';
   var MIN_SAFE_HEIGHT = 320;
   var MAX_SAFE_HEIGHT = 3200;
+  var applyingFlowFix = false;
 
   if (document.documentElement.getAttribute(INIT_ATTR) === '1') return;
   document.documentElement.setAttribute(INIT_ATTR, '1');
@@ -212,7 +213,6 @@ body.selfles-product-page #t-footer {
     if (!root) return;
 
     root.style.setProperty('height', 'auto', 'important');
-    root.style.setProperty('min-height', '0px', 'important');
   }
 
   function measureProductHeight(root) {
@@ -289,7 +289,10 @@ body.selfles-product-page #t-footer {
     var product;
     var height;
     var footer;
+    var currentMinHeight;
+    var nextMinHeight;
 
+    if (applyingFlowFix) return;
     if (!isProductPage()) return;
 
     root = findProductRecord();
@@ -298,37 +301,46 @@ body.selfles-product-page #t-footer {
     product = root.querySelector('.js-store-product, .t-store__product-snippet, .selfles-product-main-layout');
     if (!product) return;
 
-    root.classList.add('selfles-product-flow-fixed');
-    if (document.body) document.body.classList.add('selfles-product-page');
+    applyingFlowFix = true;
 
-    forceRecordPosition(root);
-    resetMobileBuyButton(root);
+    try {
+      root.classList.add('selfles-product-flow-fixed');
+      if (document.body) document.body.classList.add('selfles-product-page');
 
-    [
-      root,
-      root.querySelector('.t-store'),
-      root.querySelector('.t-store__prod-snippet__container'),
-      root.querySelector('.t-store__product-snippet')
-    ].forEach(forceRecordFlow);
+      forceRecordPosition(root);
+      resetMobileBuyButton(root);
 
-    forceProductLayoutGrid(root.querySelector('.selfles-product-main-layout'));
+      [
+        root,
+        root.querySelector('.t-store'),
+        root.querySelector('.t-store__prod-snippet__container'),
+        root.querySelector('.t-store__product-snippet')
+      ].forEach(forceRecordFlow);
 
-    resetRunawayHeight(root);
-    height = clampHeight(measureProductHeight(root));
+      forceProductLayoutGrid(root.querySelector('.selfles-product-main-layout'));
 
-    if (height) {
-      root.style.setProperty('min-height', height + 'px', 'important');
-    } else {
-      root.style.setProperty('min-height', '0px', 'important');
-    }
+      resetRunawayHeight(root);
+      height = clampHeight(measureProductHeight(root));
+      nextMinHeight = height ? height + 'px' : '0px';
+      currentMinHeight = root.style.getPropertyValue('min-height');
 
-    footer = document.getElementById('t-footer');
-    if (footer) {
-      footer.style.setProperty('clear', 'both', 'important');
+      if (currentMinHeight !== nextMinHeight) {
+        root.style.setProperty('min-height', nextMinHeight, 'important');
+      }
+
+      footer = document.getElementById('t-footer');
+      if (footer) {
+        footer.style.setProperty('clear', 'both', 'important');
+      }
+    } finally {
+      setTimeout(function () {
+        applyingFlowFix = false;
+      }, 0);
     }
   }
 
   function scheduleApply() {
+    if (applyingFlowFix) return;
     clearTimeout(scheduleApply.timer);
     scheduleApply.timer = setTimeout(applyProductRecordFlowFix, 80);
   }
@@ -352,7 +364,35 @@ body.selfles-product-page #t-footer {
   window.addEventListener('selfles:live-products-ready', scheduleApply);
 
   if ('MutationObserver' in window && document.documentElement) {
-    new MutationObserver(scheduleApply).observe(document.documentElement, {
+    new MutationObserver(function (records) {
+      if (applyingFlowFix) return;
+
+      var shouldApply = records.some(function (record) {
+        var target = record.target;
+
+        if (
+          target &&
+          target.nodeType === 1 &&
+          target.closest &&
+          target.closest('.selfles-product-options, .selfles-buy-zone, .t-slds, .t-store__prod__slider, .t-store__prod-popup__slider, .t-store__prod-snippet__gallery, .js-store-prod-slider, .selfles-product-main-layout__info, .selfles-product-main-layout__gallery')
+        ) {
+          return false;
+        }
+
+        if (record.type === 'attributes') {
+          return !!(
+            target &&
+            target.nodeType === 1 &&
+            target.closest &&
+            target.closest('.r.t-rec, .t-store, .t-store__prod-snippet__container, .t-store__product-snippet, .js-store-product')
+          );
+        }
+
+        return record.type === 'childList';
+      });
+
+      if (shouldApply) scheduleApply();
+    }).observe(document.documentElement, {
       childList: true,
       subtree: true,
       attributes: true,
