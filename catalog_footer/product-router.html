@@ -672,6 +672,56 @@
             return value;
         }
 
+        function getImageUrlFromSlideNode(node) {
+            var wrapper;
+            var imgWrapper;
+            var meta;
+            var value;
+
+            if (!node) return '';
+
+            wrapper = closest(node, '.t-slds__wrapper');
+            if (wrapper) {
+                meta = wrapper.querySelector('meta[itemprop="image"][content]');
+                value = meta ? meta.getAttribute('content') : '';
+                if (value) return value;
+            }
+
+            imgWrapper = closest(node, '.t-slds__imgwrapper');
+            value = imgWrapper ? imgWrapper.getAttribute('data-img-zoom-url') : '';
+            if (value) return value;
+
+            return getImageUrlFromNode(node);
+        }
+
+        function sameImageUrl(a, b) {
+            return String(a || '').replace(/\\//g, '/').trim() === String(b || '').replace(/\\//g, '/').trim();
+        }
+
+        function styleBgImageIfNeeded(node, image) {
+            var current;
+            var currentData;
+
+            if (!node || !image) return;
+
+            current = node.style && node.style.backgroundImage ? node.style.backgroundImage.replace(/^url\(["']?/, '').replace(/["']?\)$/, '') : '';
+            currentData = node.getAttribute('data-original') || '';
+
+            if (!sameImageUrl(current, image)) {
+                node.style.setProperty('background-image', 'url("' + image + '")', 'important');
+            }
+
+            node.style.setProperty('background-size', 'cover', 'important');
+            node.style.setProperty('background-position', 'center center', 'important');
+            node.style.setProperty('opacity', '1', 'important');
+
+            if (!sameImageUrl(currentData, image)) {
+                node.setAttribute('data-original', image);
+            }
+
+            node.classList.add('loaded');
+        }
+
         function getProductFallbackImage(root) {
             var node;
 
@@ -684,7 +734,7 @@
                 'meta[property="og:image"][content]'
             ], root);
 
-            return getImageUrlFromNode(node);
+            return getImageUrlFromSlideNode(node);
         }
 
         function currentProductUid(root) {
@@ -826,32 +876,48 @@
                 'meta[itemprop="image"][content]',
                 'meta[property="og:image"][content]'
             ].join(','), root || document).forEach(function (node) {
-                images.push(getImageUrlFromNode(node));
+                images.push(getImageUrlFromSlideNode(node));
             });
 
             return uniqueImages(images);
         }
 
         function activateSliderImage(slider, image, index) {
+            var slideIndex = index + 1;
+            var wrapper;
+            var item;
+            var width;
+
             if (!slider || !image) return;
 
-            all([
-                '.t-slds__items-wrapper .t-slds__bgimg',
-                '.t-slds__item .t-slds__bgimg',
-                '.js-product-img'
-            ].join(','), slider).forEach(function (img) {
-                if (closest(img, '.t-slds__thumbsbullet-wrapper')) return;
+            wrapper = slider.querySelector('.t-slds__items-wrapper');
+            item = slider.querySelector('.t-slds__item[data-slide-index="' + slideIndex + '"]') ||
+                slider.querySelectorAll('.t-slds__item')[slideIndex] ||
+                slider.querySelector('.t-slds__item_active');
 
-                img.style.setProperty('background-image', 'url("' + image + '")', 'important');
-                img.style.setProperty('background-size', 'cover', 'important');
-                img.style.setProperty('background-position', 'center center', 'important');
-                img.style.setProperty('opacity', '1', 'important');
-                img.setAttribute('data-original', image);
-                img.classList.add('loaded');
+            if (item) {
+                all('.t-slds__bgimg, .js-product-img', item).forEach(function (img) {
+                    if (closest(img, '.t-slds__thumbsbullet-wrapper')) return;
+                    styleBgImageIfNeeded(img, image);
+                });
+            }
+
+            all('.t-slds__item', slider).forEach(function (node) {
+                var active = node === item;
+                node.classList.toggle('t-slds__item_active', active);
+                node.setAttribute('aria-hidden', active ? 'false' : 'true');
             });
 
+            if (wrapper && item) {
+                width = item.getBoundingClientRect().width || slider.getBoundingClientRect().width || 0;
+                if (width > 0) {
+                    wrapper.setAttribute('data-slider-pos', String(slideIndex));
+                    wrapper.style.setProperty('transform', 'translateX(-' + Math.round(width * slideIndex) + 'px)');
+                }
+            }
+
             all('.t-slds__thumbsbullet, .t-slds__bullet', slider).forEach(function (bullet) {
-                var active = String(bullet.getAttribute('data-slide-bullet-for') || '') === String(index + 1);
+                var active = String(bullet.getAttribute('data-slide-bullet-for') || '') === String(slideIndex);
 
                 bullet.classList.toggle('t-slds__bullet_active', active);
                 bullet.classList.toggle('t-slds__thumbsbullet_active', active);
@@ -909,6 +975,7 @@
                 '.js-store-prod-slider'
             ].join(','), root).forEach(function (slider) {
                 var wrapper = slider.querySelector('.t-slds__thumbsbullet-wrapper');
+                var currentBullets;
                 var currentCount;
 
                 if (!wrapper) {
@@ -917,12 +984,19 @@
                     slider.appendChild(wrapper);
                 }
 
+                currentBullets = wrapper.querySelectorAll('.t-slds__thumbsbullet, .t-slds__bullet').length;
                 currentCount = Number(wrapper.getAttribute('data-selfles-built-thumbs-count') || 0);
+
+                if (currentBullets >= 2) {
+                    wrapper.setAttribute('data-selfles-built-thumbs', 'native');
+                    wrapper.setAttribute('data-selfles-built-thumbs-count', String(currentBullets));
+                    return;
+                }
 
                 if (
                     wrapper.getAttribute('data-selfles-built-thumbs') === '1' &&
                     currentCount === images.length &&
-                    wrapper.querySelectorAll('.t-slds__thumbsbullet').length === images.length
+                    currentBullets === images.length
                 ) {
                     return;
                 }
@@ -934,8 +1008,6 @@
                 images.forEach(function (image, index) {
                     wrapper.appendChild(buildThumb(slider, image, index));
                 });
-
-                activateSliderImage(slider, images[0], 0);
             });
         }
 
@@ -947,14 +1019,14 @@
                 '.t-store__prod-popup__slider .t-slds__bgimg',
                 '.t-store__prod-snippet__gallery .t-slds__bgimg'
             ].join(','), root).forEach(function (img) {
-                var bg = getImageUrlFromNode(img) || fallback;
+                var bg;
 
+                if (closest(img, '.t-slds__thumbsbullet-wrapper')) return;
+
+                bg = getImageUrlFromSlideNode(img) || fallback;
                 if (!bg) return;
 
-                img.style.setProperty('background-image', 'url("' + bg + '")', 'important');
-                img.style.setProperty('background-size', 'cover', 'important');
-                img.style.setProperty('background-position', 'center center', 'important');
-                img.style.setProperty('opacity', '1', 'important');
+                styleBgImageIfNeeded(img, bg);
             });
 
             all([
@@ -963,14 +1035,11 @@
                 '.t-store__prod-snippet__gallery > .js-product-img',
                 '.js-store-prod-slider > .js-product-img'
             ].join(','), root).forEach(function (img) {
-                var bg = getImageUrlFromNode(img) || fallback;
+                var bg = getImageUrlFromSlideNode(img) || fallback;
 
                 if (!bg) return;
 
-                img.style.setProperty('background-image', 'url("' + bg + '")', 'important');
-                img.style.setProperty('background-size', 'cover', 'important');
-                img.style.setProperty('background-position', 'center center', 'important');
-                img.style.setProperty('opacity', '1', 'important');
+                styleBgImageIfNeeded(img, bg);
             });
         }
 
@@ -994,11 +1063,7 @@
 
                 if (!bg) return;
 
-                img.style.setProperty('background-image', 'url("' + bg + '")', 'important');
-                img.style.setProperty('background-size', 'cover', 'important');
-                img.style.setProperty('background-position', 'center center', 'important');
-                img.style.setProperty('opacity', '1', 'important');
-                img.classList.add('loaded');
+                styleBgImageIfNeeded(img, bg);
             });
         }
 
@@ -1012,7 +1077,13 @@
             refreshKey = String(refreshKey || currentProductUid(slider) || 'default');
 
             if (!recid) return;
-            if (initialized && lastKey === refreshKey) return;
+            if (initialized) {
+                if (lastKey !== refreshKey) {
+                    slider.setAttribute('data-selfles-slider-native-refresh-key', refreshKey);
+                }
+                return;
+            }
+            if (lastKey === refreshKey) return;
             if (now - last < 350) return;
 
             slider.setAttribute('data-selfles-slider-refresh-at', String(now));
@@ -1039,6 +1110,8 @@
                 images.slice(0, 4).join('|')
             ].join('|');
 
+            ensureSliderThumbs(root, images);
+
             all([
                 '.t-store__prod__slider',
                 '.t-store__prod-popup__slider',
@@ -1047,8 +1120,6 @@
             ].join(','), root).forEach(function (slider) {
                 refreshNativeSlider(slider, refreshKey);
             });
-
-            ensureSliderThumbs(root, images);
 
             all([
                 '.t-store__prod__slider .t-slds__thumbsbullet-wrapper',
@@ -1336,7 +1407,7 @@
         function scheduleProductGalleryFixes() {
             if (!isProductPage()) return;
 
-            [80, 180, 360, 700, 1200, 2200, 4000].forEach(function (delay) {
+            [120, 600, 1500].forEach(function (delay) {
                 setTimeout(applyFixes, delay);
             });
         }

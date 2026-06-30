@@ -10,6 +10,7 @@
 #rec2397921511,
 #rec1653024161,
 #rec1556696391,
+#rec2417486561,
 body:not(.selfles-product-page) #rec2310894021 {
     position: absolute !important;
     left: -99999px !important;
@@ -38,6 +39,32 @@ body.selfles-product-page #rec2310894021,
     visibility: visible !important;
     pointer-events: auto !important;
     z-index: 2 !important;
+}
+
+body.selfles-product-page #rec1556696391,
+body.selfles-product-page #rec2417486561,
+html[data-selfles-product-router-v1="1"] #rec1556696391,
+html[data-selfles-product-router-v1="1"] #rec2417486561,
+body.selfles-product-page .r.t-rec[aria-hidden="true"][data-selfles-donor-preloaded="1"]:not(#rec2310894021),
+html[data-selfles-product-router-v1="1"] .r.t-rec[aria-hidden="true"][data-selfles-donor-preloaded="1"]:not(#rec2310894021) {
+    display: block !important;
+    position: fixed !important;
+    left: -200vw !important;
+    top: 0 !important;
+    width: 100vw !important;
+    max-width: none !important;
+    height: 1px !important;
+    min-height: 0 !important;
+    max-height: 1px !important;
+    overflow: hidden !important;
+    opacity: .001 !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 /* ---------- product page: pre-hide technical meta before JS ---------- */
@@ -4265,3 +4292,18 @@ body.selfles-main-catalog-rows-page .selfles-main-store-arrow::before {
     }
 }
 
+
+/* ---------- product page: compact technical/footer whitespace ---------- */
+@media screen and (min-width: 961px) {
+    body.selfles-product-page #rec2283969151 .t396__artboard,
+    body.selfles-product-page #rec2283969151 .t396__filter,
+    body.selfles-product-page #rec2283969151 .t396__carrier {
+        height: 520px !important;
+        min-height: 520px !important;
+    }
+
+    body.selfles-product-page #rec2283969151 .tn-elem__22839691511761650995489 {
+        top: 0 !important;
+        height: 520px !important;
+    }
+}
