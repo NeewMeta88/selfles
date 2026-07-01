@@ -940,7 +940,60 @@
 
     findCatalogAndCollectUIDs();
 
+    let constructorSelectHoldUntil = 0;
+    let constructorSelectDeferredTimer = null;
+
+    function isConstructorSizeSelect(node) {
+      return !!(node && node.matches && node.matches('#setConstructor .size-select'));
+    }
+
+    function holdConstructorSelectUpdates(duration) {
+      constructorSelectHoldUntil = Math.max(constructorSelectHoldUntil, Date.now() + (duration || 700));
+    }
+
+    function isConstructorSelectBusy() {
+      return Date.now() < constructorSelectHoldUntil || isConstructorSizeSelect(document.activeElement);
+    }
+
+    function deferConstructorUpdateWhileSelectBusy(callback) {
+      if (!isConstructorSelectBusy()) return false;
+
+      clearTimeout(constructorSelectDeferredTimer);
+      constructorSelectDeferredTimer = setTimeout(function retryDeferredConstructorUpdate() {
+        if (isConstructorSelectBusy()) {
+          constructorSelectDeferredTimer = setTimeout(retryDeferredConstructorUpdate, 250);
+          return;
+        }
+        callback();
+      }, 300);
+
+      return true;
+    }
+
+    function bindConstructorSelectGuard() {
+      if (document.documentElement.getAttribute('data-selfles-constructor-select-guard') === '1') return;
+      document.documentElement.setAttribute('data-selfles-constructor-select-guard', '1');
+
+      ['pointerdown', 'mousedown', 'touchstart', 'focusin', 'keydown'].forEach(function (eventName) {
+        document.addEventListener(eventName, function (event) {
+          if (isConstructorSizeSelect(event.target)) holdConstructorSelectUpdates(1200);
+        }, true);
+      });
+
+      document.addEventListener('change', function (event) {
+        if (isConstructorSizeSelect(event.target)) holdConstructorSelectUpdates(250);
+      }, true);
+
+      document.addEventListener('blur', function (event) {
+        if (isConstructorSizeSelect(event.target)) holdConstructorSelectUpdates(250);
+      }, true);
+    }
+
+    bindConstructorSelectGuard();
+
     function applyCriticalStyles() {
+      if (deferConstructorUpdateWhileSelectBusy(applyCriticalStyles)) return;
+
       const constructor = document.getElementById('setConstructor');
       if (!constructor) return;
 
@@ -1466,12 +1519,11 @@
       Array.from(select.options).forEach(option => {
         const baseLabel = sizeList.find(s => s.key === option.value)?.label || option.textContent.replace(/\s·\sнет в наличии$/, '');
         const isAvailable = hasApiDataLoaded() && hasSizes && availableSizes.includes(option.value);
-        option.textContent = isAvailable || !hasApiDataLoaded() ? baseLabel : `${baseLabel} · нет в наличии`;
-        if (!hasApiDataLoaded() || !hasSizes) {
-          option.disabled = false;
-          return;
-        }
-        option.disabled = !isAvailable;
+        const nextText = isAvailable || !hasApiDataLoaded() ? baseLabel : `${baseLabel} · нет в наличии`;
+        const nextDisabled = !(!hasApiDataLoaded() || !hasSizes) && !isAvailable;
+
+        if (option.textContent !== nextText) option.textContent = nextText;
+        if (option.disabled !== nextDisabled) option.disabled = nextDisabled;
       });
     }
 
@@ -2111,8 +2163,10 @@
                       : (img.dataset.defaultSrc || '');
 
       if (layerUrl) {
-        img.src = layerUrl;
-        img.classList.add('layer-visible');
+        if ((img.getAttribute('src') || '') !== layerUrl) {
+          img.setAttribute('src', layerUrl);
+        }
+        if (!img.classList.contains('layer-visible')) img.classList.add('layer-visible');
       } else {
         img.classList.remove('layer-visible');
       }
@@ -2399,6 +2453,8 @@
     }
 
     function updateUIAfterDataLoad() {
+      if (deferConstructorUpdateWhileSelectBusy(updateUIAfterDataLoad)) return;
+
       root.querySelectorAll('.item').forEach(item => {
         const key = item.dataset.item;
         const sw = item.querySelector('.swatches');
@@ -2447,6 +2503,7 @@
     }
 
     function forceUnlockAll() {
+      if (deferConstructorUpdateWhileSelectBusy(forceUnlockAll)) return;
       if (!root) return;
 
       const duvetItem = root.querySelector('.item[data-item="duvet"]');
@@ -2587,6 +2644,8 @@
     function scheduleBootstrapUpdate() {
       clearTimeout(bootstrapUpdateTimer);
       bootstrapUpdateTimer = setTimeout(function () {
+        if (deferConstructorUpdateWhileSelectBusy(scheduleBootstrapUpdate)) return;
+
         findCatalogAndCollectUIDs();
         if (bootstrapProductDataFromPage()) {
           updateUIAfterDataLoad();
@@ -2598,7 +2657,14 @@
     window.addEventListener('load', scheduleBootstrapUpdate);
 
     if (typeof MutationObserver !== 'undefined') {
-      const observer = new MutationObserver(scheduleBootstrapUpdate);
+      const observer = new MutationObserver(function (records) {
+        const onlyConstructorChanged = records.length > 0 && records.every(function (record) {
+          return root && record.target && (record.target === root || root.contains(record.target));
+        });
+
+        if (onlyConstructorChanged) return;
+        scheduleBootstrapUpdate();
+      });
 
       observer.observe(document.body, {
         childList: true,
