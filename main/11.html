@@ -138,6 +138,7 @@
   window.selflesGroupAvailabilityDebug=function(){var man=manifest();return{donor:donorRoots().map(function(d){return'#'+d.id;}),allProducts:Object.keys(man).length,hasPPC:!!man['PPC-BAM1025'],cards:all('.js-product.t-store__card:not(.js-product-relevant),.t-store__card:not(.js-product-relevant)').map(function(c){var sku=skuFromCard(c),g=groupForCard(c);return{sku:sku,disabled:c.getAttribute('data-selfles-card-disabled')==='1',target:g&&g.target&&g.target.sku,minPrice:g&&g.minPrice,available:!!g};}).filter(function(x){return x.sku||x.available;})};};
   function run(){if(!isMain())return;document.body.classList.add('selfles-main-catalog-rows-page');applyLabels();disableSoldOutCards();all('.t-rec').forEach(function(r){if(r.querySelector('.t-store,.js-store')&&r.querySelector('.js-store-grid-cont')){setup(r);if(typeof r._selflesMainStoreRefresh==='function')r._selflesMainStoreRefresh();if(typeof r._selflesMainStorePreload==='function')r._selflesMainStorePreload();}});scheduleGuards();}
   function schedule(){clearTimeout(schedule.t);schedule.t=setTimeout(run,120);}
+  function onlyConstructorMutations(records){var c=document.getElementById('setConstructor');return !!(c&&records&&records.length&&Array.prototype.every.call(records,function(r){return r.target&&(r.target===c||c.contains(r.target));}));}
   document.addEventListener('click',blockDisabledCardAction,true);
   document.addEventListener('auxclick',blockDisabledCardAction,true);
   document.addEventListener('mousedown',blockDisabledCardAction,true);
@@ -149,6 +150,6 @@
   window.addEventListener('scroll',scheduleGuards,true);
   window.addEventListener('selfles:products-manifest-ready',run);
   window.addEventListener('selfles:live-products-ready',run);
-  if('MutationObserver'in window&&document.body)new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-product-inv','data-product-url','class','style']});
+  if('MutationObserver'in window&&document.body)new MutationObserver(function(records){if(onlyConstructorMutations(records))return;schedule();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-product-inv','data-product-url','class','style']});
 })();
 </script>
