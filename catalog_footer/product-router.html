@@ -711,15 +711,25 @@
                 node.style.setProperty('background-image', 'url("' + image + '")', 'important');
             }
 
-            node.style.setProperty('background-size', 'cover', 'important');
-            node.style.setProperty('background-position', 'center center', 'important');
-            node.style.setProperty('opacity', '1', 'important');
+            if (node.style.backgroundSize !== 'cover') {
+                node.style.setProperty('background-size', 'cover', 'important');
+            }
+
+            if (node.style.backgroundPosition !== 'center center') {
+                node.style.setProperty('background-position', 'center center', 'important');
+            }
+
+            if (node.style.opacity !== '1') {
+                node.style.setProperty('opacity', '1', 'important');
+            }
 
             if (!sameImageUrl(currentData, image)) {
                 node.setAttribute('data-original', image);
             }
 
-            node.classList.add('loaded');
+            if (!node.classList.contains('loaded')) {
+                node.classList.add('loaded');
+            }
         }
 
         function getProductFallbackImage(root) {
@@ -1073,21 +1083,26 @@
             var last = Number(slider.getAttribute('data-selfles-slider-refresh-at') || 0);
             var lastKey = String(slider.getAttribute('data-selfles-slider-native-refresh-key') || '');
             var initialized = !!slider.querySelector('.t-slds__items-wrapper[data-slider-initialized="true"], .t-slds__items-wrapper[data-swiper-initialized="true"]');
+            var hasWrapper = !!slider.querySelector('.t-slds__items-wrapper');
+            var tried = slider.getAttribute('data-selfles-slider-native-refresh-tried') === '1';
 
             refreshKey = String(refreshKey || currentProductUid(slider) || 'default');
 
             if (!recid) return;
-            if (initialized) {
+
+            if (initialized || (hasWrapper && tried)) {
                 if (lastKey !== refreshKey) {
                     slider.setAttribute('data-selfles-slider-native-refresh-key', refreshKey);
                 }
                 return;
             }
+
             if (lastKey === refreshKey) return;
-            if (now - last < 350) return;
+            if (now - last < 700) return;
 
             slider.setAttribute('data-selfles-slider-refresh-at', String(now));
             slider.setAttribute('data-selfles-slider-native-refresh-key', refreshKey);
+            slider.setAttribute('data-selfles-slider-native-refresh-tried', '1');
 
             try {
                 if (typeof window.t_sldsInit === 'function') {
