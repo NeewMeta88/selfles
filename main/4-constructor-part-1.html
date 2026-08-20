@@ -1,0 +1,834 @@
+<script>
+    window.SELFLES_CONSTRUCTOR_DATA = (function () {
+        const IMAGE_LAYERS = {
+            pillowcase: {
+                pink: 'https://lh3.googleusercontent.com/d/1A3jeV7paGPF8Xyit4N0aHvO_hwUpivmN',
+                green: 'https://lh3.googleusercontent.com/d/1Wjs8H1wDa_uVVQVT6K5iyuF__eOFpkYf',
+                coffee: 'https://lh3.googleusercontent.com/d/19yiBDXgkpWUC-i5vZHUx9kZ4COFJmjsn',
+                blue: 'https://lh3.googleusercontent.com/d/1V-Y0qgDERVDPS1Q6EsR8-5vAtfe4fTy1',
+                cream: 'https://lh3.googleusercontent.com/d/1eDRfTmsAWh1KWEnxwD8tQ2iBehs2CD_q',
+                white: 'https://lh3.googleusercontent.com/d/1G41kU6nNOSRPPIJejZx4n54msL_0thFz'
+            },
+            sheet: {
+                pink: 'https://lh3.googleusercontent.com/d/1UkR0Onoiehr89zq7ujRXVpPDA4P47X-4',
+                green: 'https://lh3.googleusercontent.com/d/1-M9VqiAcBvf5xUjYMM3fS7GwE7MRP_Qj',
+                coffee: 'https://lh3.googleusercontent.com/d/1rGvRrs8ORfbRJXHOKuZcF3CPMuZWMoSR',
+                blue: 'https://lh3.googleusercontent.com/d/1tB3gWkc2Z9Cy0rGI70TOzMiuzS6JOXS4',
+                cream: 'https://lh3.googleusercontent.com/d/1Yu8N4ZKnfnvR7uqoPC3jkApLoRdMI8op',
+                white: 'https://lh3.googleusercontent.com/d/142JumBjogn8q0IhybwA4Ruv1iciHIjkA'
+            },
+            duvet: {
+                pink: 'https://lh3.googleusercontent.com/d/1eDZMR9IT_Zfem057ow6ENxgutTCUsMtz',
+                green: 'https://lh3.googleusercontent.com/d/1zxLFb6cjSsE2rTIZzSMapDG_Sn6oWiA9',
+                coffee: 'https://lh3.googleusercontent.com/d/1wb6hKNHrRjUEV2oyABIlvGBL9G74DbU9',
+                blue: 'https://lh3.googleusercontent.com/d/1XG0HNulhVHUcojXc_5c6SqmdTTWWJteI',
+                cream: 'https://lh3.googleusercontent.com/d/1xfQt-9u2NsRl5pQIm_ony2WKs3QQS1Xu',
+                white: 'https://lh3.googleusercontent.com/d/1MauC_nJtzXHfgAEp1KvvrQgZMdnHy8sp'
+            }
+        };
+
+        const COLORS = [
+            {key: 'pink', label: 'розовый', hex: '#F6C1CD'},
+            {key: 'green', label: 'зелёный', hex: '#AFD9C4'},
+            {key: 'coffee', label: 'кофейный', hex: '#C6B4AB'},
+            {key: 'blue', label: 'голубой', hex: '#A9D6EF'},
+            {key: 'cream', label: 'сливочный', hex: '#FBF8EC'},
+            {key: 'white', label: 'белый', hex: '#F4F4F4'},
+        ];
+
+        const TILDA_COLOR_MAP = {
+            'розовый': 'pink',
+            'зеленый': 'green',
+            'кофейный': 'coffee',
+            'голубой': 'blue',
+            'сливочный': 'cream',
+            'белый': 'white',
+        };
+
+        const TILDA_SIZE_MAP = {
+            '160х200х30': '160',
+            '180х200х30': '180',
+            '240х260': 'KS',
+            '220х240': 'EUR'
+        };
+
+        const TILDA_DUVET_SIZE_MAP = {
+            '150х200': '150',
+            '180х210': '180',
+            '200х220': '200',
+            '220х240': '220'
+        };
+
+        const SHEET_SIZES = [
+            {key: '160', label: '160 × 200, на резинке', tildaKey: '160х200х30'},
+            {key: '180', label: '180 × 200, на резинке', tildaKey: '180х200х30'},
+            {key: 'KS', label: 'king size (240 × 260), без резинки', tildaKey: '240х260'},
+            {key: 'EUR', label: 'euro (220 × 240), без резинки', tildaKey: '220х240'}
+        ];
+
+        const DUVET_SIZES = [
+            {key: '150', label: '150 × 200', tildaKey: '150х200'},
+            {key: '180', label: '180 × 210', tildaKey: '180х210'},
+            {key: '200', label: '200 × 220', tildaKey: '200х220'},
+            {key: '220', label: '220 × 240', tildaKey: '220х240'}
+        ];
+
+        return {
+            IMAGE_LAYERS: IMAGE_LAYERS,
+            COLORS: COLORS,
+            TILDA_COLOR_MAP: TILDA_COLOR_MAP,
+            TILDA_SIZE_MAP: TILDA_SIZE_MAP,
+            TILDA_DUVET_SIZE_MAP: TILDA_DUVET_SIZE_MAP,
+            SHEET_SIZES: SHEET_SIZES,
+            DUVET_SIZES: DUVET_SIZES,
+        };
+    })();
+</script>
+
+<!-- Подключение JavaScript -->
+<script>
+    (function () {
+        'use strict';
+
+        const CONSTRUCTOR_DATA = window.SELFLES_CONSTRUCTOR_DATA || {};
+        const IMAGE_LAYERS = CONSTRUCTOR_DATA.IMAGE_LAYERS || {};
+        const COLORS = CONSTRUCTOR_DATA.COLORS || [];
+        const TILDA_COLOR_MAP = CONSTRUCTOR_DATA.TILDA_COLOR_MAP || {};
+        const TILDA_SIZE_MAP = CONSTRUCTOR_DATA.TILDA_SIZE_MAP || {};
+        const TILDA_DUVET_SIZE_MAP = CONSTRUCTOR_DATA.TILDA_DUVET_SIZE_MAP || {};
+        const SHEET_SIZES = CONSTRUCTOR_DATA.SHEET_SIZES || [];
+        const DUVET_SIZES = CONSTRUCTOR_DATA.DUVET_SIZES || [];
+
+        const CONFIG = window.SELFLES_CONFIG || {};
+
+        const CATALOG_IDS = CONFIG.CATALOG_IDS || [
+            'rec2310894021',
+            'rec2397921511',
+            'rec1653024161',
+            'rec1556696391'
+        ];
+
+        /*
+          Наличие для конструктора берется только из живого индекса ST315N,
+          который публикует footer-catalog-availability-from-st315n.html.
+          Статический список товаров здесь намеренно не используется.
+        */
+
+        function getMergedProductsManifest() {
+            if (
+                document.documentElement.getAttribute(
+                    'data-selfles-live-products-ready'
+                ) !== '1'
+            ) {
+                return {};
+            }
+
+            return Object.assign(
+                {},
+                window.SELFLES_ALL_PRODUCTS_BY_SKU || {}
+            );
+        }
+
+        function getManifestProductUidList() {
+            const manifest = getMergedProductsManifest();
+            return Object.keys(manifest).map(function (sku) {
+                const item = manifest[sku] || {};
+                return String(firstNotEmpty(
+                    item.tildaUid,
+                    item.uid,
+                    item.product_uid,
+                    item.gen_uid,
+                    item['Tilda UID']
+                ) || '').trim();
+            }).filter(Boolean);
+        }
+
+        function canonicalConstructorSku(value) {
+            const clean = cleanSku(value);
+            const aliases = window.SELFLES_SKU_ALIASES || {};
+            return cleanSku(aliases[clean] || clean);
+        }
+
+        function getManifestSkuByUid(uid) {
+            const cleanUid = String(uid || '').trim();
+            const manifest = getMergedProductsManifest();
+
+            if (!cleanUid) return '';
+
+            for (const sku of Object.keys(manifest)) {
+                const item = manifest[sku] || {};
+                const itemUid = String(firstNotEmpty(
+                    item.tildaUid,
+                    item.uid,
+                    item.product_uid,
+                    item.gen_uid,
+                    item['Tilda UID']
+                ) || '').trim();
+
+                if (itemUid === cleanUid) {
+                    return canonicalConstructorSku(item.sku || sku);
+                }
+            }
+
+            return '';
+        }
+
+        let catalogBlock = null;
+        let CATALOG_BLOCK_ID = null;
+        let PRODUCT_GEN_UIDS = [];
+
+        function hideTechnicalCatalogBlock(block) {
+            if (!block) return;
+
+            /*
+              Важно: не ставим display:none.
+              Tilda может не успеть отрисовать карточки и data-product-inv,
+              а конструктор из-за этого получает неполный список цветов/размеров.
+              Прячем технический каталог визуально, но оставляем его в DOM-раскладке Tilda.
+            */
+            block.style.removeProperty('display');
+            block.style.removeProperty('visibility');
+            block.removeAttribute('hidden');
+
+            block.style.setProperty('position', 'absolute', 'important');
+            block.style.setProperty('left', '-99999px', 'important');
+            block.style.setProperty('top', '0', 'important');
+            block.style.setProperty('width', '1px', 'important');
+            block.style.setProperty('height', '1px', 'important');
+            block.style.setProperty('overflow', 'hidden', 'important');
+            block.style.setProperty('opacity', '0', 'important');
+            block.style.setProperty('pointer-events', 'none', 'important');
+            block.style.setProperty('z-index', '-1', 'important');
+            block.setAttribute('aria-hidden', 'true');
+        }
+
+        function findCatalogAndCollectUIDs() {
+            const genUids = new Set(PRODUCT_GEN_UIDS);
+            getManifestProductUidList().forEach(function (uid) {
+                genUids.add(uid);
+            });
+            let foundInTechnicalBlocks = false;
+
+            for (const id of CATALOG_IDS) {
+                const block = document.getElementById(id);
+                if (!block) continue;
+
+                hideTechnicalCatalogBlock(block);
+
+                const products = block.querySelectorAll('[data-product-gen-uid]');
+                if (products.length > 0) {
+                    if (!catalogBlock) {
+                        catalogBlock = block;
+                        CATALOG_BLOCK_ID = id;
+                    }
+
+                    foundInTechnicalBlocks = true;
+
+                    products.forEach(p => {
+                        const genUid = p.getAttribute('data-product-gen-uid');
+                        if (genUid) genUids.add(genUid);
+                    });
+                }
+            }
+
+            if (foundInTechnicalBlocks) {
+                PRODUCT_GEN_UIDS.splice(0, PRODUCT_GEN_UIDS.length, ...Array.from(genUids));
+                return PRODUCT_GEN_UIDS.length > 0;
+            }
+
+            const allProducts = document.querySelectorAll('[data-product-gen-uid]');
+            if (allProducts.length > 0) {
+                allProducts.forEach(p => {
+                    const genUid = p.getAttribute('data-product-gen-uid');
+                    if (genUid) genUids.add(genUid);
+                });
+                PRODUCT_GEN_UIDS.splice(0, PRODUCT_GEN_UIDS.length, ...Array.from(genUids));
+
+                return PRODUCT_GEN_UIDS.length > 0;
+            }
+
+            if (genUids.size > 0) {
+                PRODUCT_GEN_UIDS.splice(0, PRODUCT_GEN_UIDS.length, ...Array.from(genUids));
+                return true;
+            }
+
+            return false;
+        }
+
+        findCatalogAndCollectUIDs();
+
+        let constructorSelectHoldUntil = 0;
+        let constructorSelectDeferredTimer = null;
+
+        function isConstructorSizeSelect(node) {
+            return !!(node && node.matches && node.matches('#setConstructor .size-select'));
+        }
+
+        function holdConstructorSelectUpdates(duration) {
+            constructorSelectHoldUntil = Math.max(constructorSelectHoldUntil, Date.now() + (duration || 700));
+        }
+
+        function isConstructorSelectBusy() {
+            return Date.now() < constructorSelectHoldUntil || isConstructorSizeSelect(document.activeElement);
+        }
+
+        function deferConstructorUpdateWhileSelectBusy(callback) {
+            if (!isConstructorSelectBusy()) return false;
+
+            clearTimeout(constructorSelectDeferredTimer);
+            constructorSelectDeferredTimer = setTimeout(function retryDeferredConstructorUpdate() {
+                if (isConstructorSelectBusy()) {
+                    constructorSelectDeferredTimer = setTimeout(retryDeferredConstructorUpdate, 250);
+                    return;
+                }
+                callback();
+            }, 300);
+
+            return true;
+        }
+
+        function bindConstructorSelectGuard() {
+            if (document.documentElement.getAttribute('data-selfles-constructor-select-guard') === '1') return;
+            document.documentElement.setAttribute('data-selfles-constructor-select-guard', '1');
+
+            ['pointerdown', 'mousedown', 'touchstart', 'focusin', 'keydown'].forEach(function (eventName) {
+                document.addEventListener(eventName, function (event) {
+                    if (isConstructorSizeSelect(event.target)) holdConstructorSelectUpdates(1200);
+                }, true);
+            });
+
+            document.addEventListener('change', function (event) {
+                if (isConstructorSizeSelect(event.target)) holdConstructorSelectUpdates(250);
+            }, true);
+
+            document.addEventListener('blur', function (event) {
+                if (isConstructorSizeSelect(event.target)) holdConstructorSelectUpdates(250);
+            }, true);
+        }
+
+        bindConstructorSelectGuard();
+
+        function ensureCustomSizeSelectStyles() {
+            if (document.getElementById('selfles-custom-size-select-style')) return;
+
+            const style = document.createElement('style');
+            style.id = 'selfles-custom-size-select-style';
+            style.textContent = [
+                '#setConstructor .size.selfles-size-shell{position:relative;display:block;width:min(100%,340px);max-width:340px;margin:6px 0 10px;color:#EE413C;font-size:14px;z-index:1;}',
+                '#setConstructor .size.selfles-size-shell.selfles-size-open{z-index:1005;}',
+                '#setConstructor .size-select.selfles-native-size-select{position:absolute!important;left:0!important;top:0!important;width:1px!important;height:1px!important;min-width:1px!important;min-height:1px!important;opacity:0!important;pointer-events:none!important;border:0!important;padding:0!important;margin:0!important;}',
+                '#setConstructor .selfles-size-trigger{position:relative;display:block;width:100%;box-sizing:border-box;border:1px solid #373737;border-radius:8px;background:#fff;color:#373737;-webkit-text-fill-color:#373737;padding:8px 48px 8px 12px;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.35;text-align:left;cursor:pointer;}',
+                '#setConstructor .selfles-size-trigger:focus{outline:2px solid #EE413C;outline-offset:1px;border-color:#EE413C;}',
+                '#setConstructor .selfles-size-trigger::after{content:"";position:absolute;right:14px;top:50%;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid #EE413C;transform:translateY(-45%);pointer-events:none;}',
+                '#setConstructor .size.selfles-size-open .selfles-size-trigger::after{transform:translateY(-55%) rotate(180deg);}',
+                '#setConstructor .selfles-size-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);box-sizing:border-box;display:none;flex-direction:column;overflow:hidden;border:1px solid rgba(55,55,55,.18);border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(0,0,0,.14);z-index:1006;}',
+                '#setConstructor .size.selfles-size-open .selfles-size-menu{display:flex;}',
+                '#setConstructor .selfles-size-option{display:block;width:100%;box-sizing:border-box;border:0;border-bottom:1px solid rgba(55,55,55,.08);background:#fff;color:#373737;padding:12px 14px;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.3;text-align:left;cursor:pointer;}',
+                '#setConstructor .selfles-size-option:last-child{border-bottom:0;}',
+                '#setConstructor .selfles-size-option:hover,#setConstructor .selfles-size-option.is-active{background:rgba(238,65,60,.08);color:#EE413C;}',
+                '#setConstructor .selfles-size-option[disabled]{opacity:.42;cursor:not-allowed;background:#fff;color:#373737;}',
+                '@media (max-width:768px){#setConstructor .size.selfles-size-shell{width:100%;max-width:none;margin-left:calc(var(--m-pad,10px) * -1)!important;}#setConstructor .selfles-size-trigger{padding:12px 48px 12px 12px;font-size:16px;}#setConstructor .selfles-size-option{padding:14px 12px;font-size:16px;}}'
+            ].join('\n');
+            document.head.appendChild(style);
+        }
+
+        function closeCustomSizeSelect(shell) {
+            if (!shell) return;
+            shell.classList.remove('selfles-size-open');
+            const trigger = shell.querySelector('.selfles-size-trigger');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        }
+
+        function closeOtherCustomSizeSelects(exceptShell) {
+            document.querySelectorAll('#setConstructor .size.selfles-size-open').forEach(function (shell) {
+                if (shell !== exceptShell) closeCustomSizeSelect(shell);
+            });
+        }
+
+        function syncCustomSizeSelect(select) {
+            if (!select || !select._selflesCustomSize) return;
+
+            const parts = select._selflesCustomSize;
+            const selected = select.options[select.selectedIndex] || select.options[0];
+            parts.trigger.textContent = selected ? selected.textContent : '';
+            parts.menu.innerHTML = '';
+
+            Array.from(select.options).forEach(function (option) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'selfles-size-option';
+                button.textContent = option.textContent;
+                button.setAttribute('role', 'option');
+                button.setAttribute('aria-selected', option.value === select.value ? 'true' : 'false');
+                button.dataset.value = option.value;
+
+                if (option.value === select.value) button.classList.add('is-active');
+                if (option.disabled) {
+                    button.disabled = true;
+                    button.setAttribute('aria-disabled', 'true');
+                }
+
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (button.disabled) return;
+
+                    select.value = option.value;
+                    closeCustomSizeSelect(parts.shell);
+                    select.dispatchEvent(new Event('change', {bubbles: true}));
+                    syncCustomSizeSelect(select);
+                });
+
+                parts.menu.appendChild(button);
+            });
+        }
+
+        function enhanceConstructorSizeSelect(select) {
+            let shell;
+            let trigger;
+            let menu;
+
+            if (!select || select._selflesCustomSize) {
+                syncCustomSizeSelect(select);
+                return;
+            }
+
+            ensureCustomSizeSelectStyles();
+
+            shell = select.closest('.size');
+            if (!shell) return;
+
+            if (shell.tagName && shell.tagName.toLowerCase() === 'label') {
+                const replacement = document.createElement('div');
+                replacement.className = shell.className;
+                shell.parentNode.insertBefore(replacement, shell);
+                replacement.appendChild(select);
+                shell.remove();
+                shell = replacement;
+            }
+
+            shell.classList.add('selfles-size-shell');
+            select.classList.add('selfles-native-size-select');
+            select.setAttribute('tabindex', '-1');
+            select.setAttribute('aria-hidden', 'true');
+
+            trigger = document.createElement('button');
+            trigger.type = 'button';
+            trigger.className = 'selfles-size-trigger';
+            trigger.setAttribute('aria-haspopup', 'listbox');
+            trigger.setAttribute('aria-expanded', 'false');
+            trigger.setAttribute('aria-label', select.getAttribute('aria-label') || 'Выбор размера');
+
+            menu = document.createElement('div');
+            menu.className = 'selfles-size-menu';
+            menu.setAttribute('role', 'listbox');
+            menu.setAttribute('aria-label', select.getAttribute('aria-label') || 'Выбор размера');
+
+            shell.appendChild(trigger);
+            shell.appendChild(menu);
+
+            select._selflesCustomSize = {shell: shell, trigger: trigger, menu: menu};
+
+            trigger.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const willOpen = !shell.classList.contains('selfles-size-open');
+                closeOtherCustomSizeSelects(shell);
+                shell.classList.toggle('selfles-size-open', willOpen);
+                trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            });
+
+            trigger.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closeCustomSizeSelect(shell);
+                }
+            });
+
+            syncCustomSizeSelect(select);
+        }
+
+        if (document.documentElement.getAttribute('data-selfles-custom-size-close') !== '1') {
+            document.documentElement.setAttribute('data-selfles-custom-size-close', '1');
+            const closeSizeSelectOnOutsideTouch = function (event) {
+                if (event.target.closest && event.target.closest('#setConstructor .size.selfles-size-shell')) return;
+                closeOtherCustomSizeSelects(null);
+            };
+            document.addEventListener('pointerdown', closeSizeSelectOnOutsideTouch, true);
+            document.addEventListener('touchstart', closeSizeSelectOnOutsideTouch, true);
+        }
+
+        function applyCriticalStyles() {
+            if (deferConstructorUpdateWhileSelectBusy(applyCriticalStyles)) return;
+
+            const constructor = document.getElementById('setConstructor');
+            if (!constructor) return;
+
+            const isMobile = window.innerWidth <= 768;
+
+            constructor.style.setProperty('display', 'grid', 'important');
+            if (isMobile) {
+                constructor.style.setProperty('grid-template-columns', '1fr', 'important');
+                constructor.style.setProperty('gap', '18px', 'important');
+            } else {
+                constructor.style.setProperty('grid-template-columns', '1.2fr .8fr', 'important');
+                constructor.style.setProperty('gap', '28px', 'important');
+            }
+            constructor.style.setProperty('max-width', '1440px', 'important');
+            constructor.style.setProperty('margin', '0 auto', 'important');
+
+            const viz = constructor.querySelector('.viz');
+
+            if (viz) {
+                viz.style.setProperty('position', 'relative', 'important');
+
+                if (isMobile) {
+                    viz.style.setProperty('aspect-ratio', 'auto', 'important');
+                    viz.style.setProperty('height', '92vw', 'important');
+                    viz.style.setProperty('max-height', 'none', 'important');
+                    viz.style.setProperty('border-radius', '0', 'important');
+                    viz.style.setProperty('border', '0', 'important');
+                } else {
+                    viz.style.setProperty('aspect-ratio', '1/1', 'important');
+                    viz.style.removeProperty('height');
+                    viz.style.removeProperty('max-height');
+                    viz.style.setProperty('border-radius', '14px', 'important');
+                    viz.style.removeProperty('border');
+                }
+
+                viz.style.setProperty('background', '#f6f6f6', 'important');
+                viz.style.setProperty('overflow', 'hidden', 'important');
+            }
+
+            const vizImgs = constructor.querySelectorAll('.viz img');
+            vizImgs.forEach(img => {
+                img.style.setProperty('position', 'absolute', 'important');
+                img.style.setProperty('inset', '0', 'important');
+                img.style.setProperty('width', '100%', 'important');
+                img.style.setProperty('height', '100%', 'important');
+                img.style.setProperty('object-fit', 'cover', 'important');
+                img.style.setProperty('display', 'block', 'important');
+            });
+
+            const totalSum = document.getElementById('totalSum');
+            if (totalSum) {
+                totalSum.style.setProperty('font-family', '"Oswald"', 'important');
+                totalSum.style.setProperty('font-weight', '500', 'important');
+                if (isMobile) {
+                    totalSum.style.setProperty('font-size', 'calc(48px + 1.2vw)', 'important');
+                } else {
+                    totalSum.style.setProperty('font-size', '64px', 'important');
+                }
+                totalSum.style.setProperty('line-height', '1.2', 'important');
+                totalSum.style.setProperty('color', '#EE413C', 'important');
+            }
+
+            const controls = constructor.querySelector('.controls');
+            if (controls) {
+                if (isMobile) {
+                    controls.style.removeProperty('padding-right');
+                } else {
+                    controls.style.setProperty('display', 'flex', 'important');
+                    controls.style.setProperty('flex-direction', 'column', 'important');
+                    controls.style.setProperty('padding-right', 'clamp(20px, 4vw, 48px)', 'important');
+                }
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyCriticalStyles);
+        } else {
+            applyCriticalStyles();
+        }
+        setTimeout(applyCriticalStyles, 100);
+        setTimeout(applyCriticalStyles, 500);
+        window.addEventListener('resize', applyCriticalStyles);
+
+        function normalizeTildaSize(value) {
+            return String(value || '')
+                .toLowerCase()
+                .trim()
+                .replace(/[x×]/g, 'х')
+                .replace(/\s*х\s*/g, 'х')
+                .replace(/\s+/g, '');
+        }
+
+        function normalizeTildaColor(value) {
+            return String(value || '')
+                .toLowerCase()
+                .trim()
+                .replace(/ё/g, 'е');
+        }
+
+        function firstNotEmpty() {
+            for (let i = 0; i < arguments.length; i++) {
+                const value = arguments[i];
+                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                    return value;
+                }
+            }
+            return '';
+        }
+
+        function parseMoney(value) {
+            if (typeof value === 'number') return value;
+            return parseFloat(String(value || '0').replace(/\s/g, '').replace(',', '.')) || 0;
+        }
+
+        function cleanSku(value) {
+            return String(value || '')
+                .replace(/^\s*(sku|артикул|арт\.?|art\.?|vendor\s+code)\s*:?\s*/i, '')
+                .trim()
+                .toUpperCase();
+        }
+
+        function getColorByCode(code) {
+            const map = {
+                W: 'white',
+                P: 'pink',
+                G: 'green',
+                C: 'coffee',
+                B: 'blue',
+                S: 'cream'
+            };
+
+            return map[String(code || '').toUpperCase()] || null;
+        }
+
+        function detectColorFromText(value) {
+            const text = normalizeTildaColor(value);
+
+            if (text.includes('бел')) return 'white';
+            if (text.includes('розов')) return 'pink';
+            if (text.includes('зелен')) return 'green';
+            if (text.includes('коф')) return 'coffee';
+            if (text.includes('голуб')) return 'blue';
+            if (text.includes('слив')) return 'cream';
+
+            return null;
+        }
+
+        function detectBySku(skuValue) {
+            const sku = cleanSku(skuValue);
+            let match = null;
+
+            match = sku.match(/^N([WPGCBS])-?/);
+            if (match) {
+                return {
+                    productType: 'pillowcase',
+                    color: getColorByCode(match[1]),
+                    size: null
+                };
+            }
+
+            match = sku.match(/^PP(150|180|220)([WPGCBS])-?/);
+            if (match) {
+                return {
+                    productType: 'duvet',
+                    size: match[1],
+                    color: getColorByCode(match[2])
+                };
+            }
+
+            match = sku.match(/^PP([WPGCBS])-?/);
+            if (match) {
+                return {
+                    productType: 'duvet',
+                    size: '200',
+                    color: getColorByCode(match[1])
+                };
+            }
+
+            match = sku.match(/^P(160|180)([WPGCBS])-?/);
+            if (match) {
+                return {
+                    productType: 'sheet',
+                    size: match[1],
+                    color: getColorByCode(match[2])
+                };
+            }
+
+            match = sku.match(/^P(KS|EUR)([WPGCBS])-?/);
+            if (match) {
+                return {
+                    productType: 'sheet',
+                    size: match[1],
+                    color: getColorByCode(match[2])
+                };
+            }
+
+            return {
+                productType: null,
+                color: null,
+                size: null
+            };
+        }
+
+        function detectProductType(title, sku) {
+            const titleLower = String(title || '').toLowerCase();
+            const skuUpper = cleanSku(sku);
+
+            if (skuUpper.startsWith('PP') || titleLower.includes('пододеяльник')) return 'duvet';
+            if (skuUpper.startsWith('N') || titleLower.includes('наволоч')) return 'pillowcase';
+            if (skuUpper.startsWith('P') || titleLower.includes('простын')) return 'sheet';
+
+            return null;
+        }
+
+        function detectSizeFromText(productType, value) {
+            const text = String(value || '')
+                .toLowerCase()
+                .replace(/[x×]/g, 'х')
+                .replace(/\s+/g, '');
+
+            if (productType === 'sheet') {
+                if (text.includes('king') || text.includes('240х260')) return 'KS';
+                if (text.includes('euro') || text.includes('евро') || text.includes('220х240')) return 'EUR';
+                if (text.includes('180х200') || text.includes('180')) return '180';
+                if (text.includes('160х200') || text.includes('160')) return '160';
+            }
+
+            if (productType === 'duvet') {
+                if (text.includes('220х240')) return '220';
+                if (text.includes('200х220')) return '200';
+                if (text.includes('180х210')) return '180';
+                if (text.includes('150х200')) return '150';
+            }
+
+            return null;
+        }
+
+        function getProductTitle(product) {
+            return firstNotEmpty(product.title, product.name, product.product, product.product_name);
+        }
+
+        function getProductSku(product, edition) {
+            return firstNotEmpty(
+                edition && edition.sku,
+                edition && edition.SKU,
+                edition && edition.vendorCode,
+                edition && edition.vendor_code,
+                product.sku,
+                product.SKU,
+                product.vendorCode,
+                product.vendor_code,
+                product.product_sku
+            );
+        }
+
+        function getProductUid(product, edition) {
+            return String(firstNotEmpty(
+                edition && edition.uid,
+                edition && edition.edition_uid,
+                edition && edition.gen_uid,
+                product.uid,
+                product.edition_uid,
+                product.gen_uid,
+                product.genUid,
+                product.product_uid
+            ));
+        }
+
+        function getProductQuantity(product, edition) {
+            var values = [
+                edition && edition.quantity,
+                edition && edition.amount,
+                edition && edition.balance,
+                edition && edition.inv,
+                edition && edition.inventory,
+                edition && edition.stock,
+                edition && edition.available,
+                edition && edition['data-product-inv'],
+                product.quantity,
+                product.amount,
+                product.balance,
+                product.inv,
+                product.inventory,
+                product.stock,
+                product.available,
+                product['data-product-inv']
+            ];
+            var raw = null;
+            var qty;
+            var availability = String(firstNotEmpty(
+                edition && edition.availability,
+                edition && edition.available,
+                product.availability,
+                product.available
+            ) || '').toLowerCase();
+
+            for (var i = 0; i < values.length; i++) {
+                if (values[i] !== undefined && values[i] !== null && String(values[i]).trim() !== '') {
+                    raw = values[i];
+                    break;
+                }
+            }
+
+            if (raw !== null) {
+                qty = Number(String(raw).replace(',', '.'));
+                return isFinite(qty) ? qty : 0;
+            }
+
+            if (availability.indexOf('outofstock') !== -1 || availability === 'false') {
+                return 0;
+            }
+
+            /*
+              В Tilda пустой/отсутствующий остаток часто означает,
+              что складской учёт для товара не ограничен, но товар доступен.
+              Это та же логика, что и на странице товара/в рекомендациях.
+            */
+            return 99999;
+        }
+
+        function getProductPrice(product, edition) {
+            return parseMoney(firstNotEmpty(
+                edition && edition.price,
+                product.price
+            ));
+        }
+
+        function getProductImage(product, edition) {
+            return firstNotEmpty(
+                edition && edition.img,
+                edition && edition.image,
+                product.img,
+                product.image,
+                product.photo
+            );
+        }
+
+        window.SELFLES_CONSTRUCTOR_SHARED = {
+            IMAGE_LAYERS,
+            COLORS,
+            TILDA_COLOR_MAP,
+            TILDA_SIZE_MAP,
+            TILDA_DUVET_SIZE_MAP,
+            SHEET_SIZES,
+            DUVET_SIZES,
+            CATALOG_IDS,
+            get PRODUCT_GEN_UIDS() { return PRODUCT_GEN_UIDS; },
+            getMergedProductsManifest,
+            getManifestSkuByUid,
+            findCatalogAndCollectUIDs,
+            deferConstructorUpdateWhileSelectBusy,
+            enhanceConstructorSizeSelect,
+            syncCustomSizeSelect,
+            normalizeTildaSize,
+            normalizeTildaColor,
+            firstNotEmpty,
+            parseMoney,
+            cleanSku,
+            detectColorFromText,
+            detectBySku,
+            detectProductType,
+            detectSizeFromText,
+            getProductTitle,
+            getProductSku,
+            getProductUid,
+            getProductQuantity,
+            getProductPrice,
+            getProductImage
+        };
+    })();
+</script>

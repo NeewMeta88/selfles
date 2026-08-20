@@ -1,0 +1,1564 @@
+<script>
+    (function () {
+        'use strict';
+
+        const SHARED = window.SELFLES_CONSTRUCTOR_SHARED;
+        if (!SHARED) {
+            console.error('[setConstructor] Сначала подключите constructor-part-1.html');
+            return;
+        }
+
+        const {
+            IMAGE_LAYERS,
+            COLORS,
+            TILDA_COLOR_MAP,
+            TILDA_SIZE_MAP,
+            TILDA_DUVET_SIZE_MAP,
+            SHEET_SIZES,
+            DUVET_SIZES,
+            CATALOG_IDS,
+            PRODUCT_GEN_UIDS,
+            getMergedProductsManifest,
+            getManifestSkuByUid,
+            findCatalogAndCollectUIDs,
+            deferConstructorUpdateWhileSelectBusy,
+            enhanceConstructorSizeSelect,
+            syncCustomSizeSelect,
+            normalizeTildaSize,
+            normalizeTildaColor,
+            firstNotEmpty,
+            parseMoney,
+            cleanSku,
+            detectColorFromText,
+            detectBySku,
+            detectProductType,
+            detectSizeFromText,
+            getProductTitle,
+            getProductSku,
+            getProductUid,
+            getProductQuantity,
+            getProductPrice,
+            getProductImage
+        } = SHARED;
+
+        function registerCatalogVariant(product, edition, matchStats) {
+            const title = getProductTitle(product);
+            const sku = canonicalConstructorSku(getProductSku(product, edition));
+            const uid = getProductUid(product, edition);
+
+            if (!uid) {
+                console.warn('[setConstructor] UID не найден:', {product, edition});
+                return;
+            }
+
+            const skuInfo = detectBySku(sku);
+
+            const productType = skuInfo.productType || detectProductType(title, sku);
+
+            if (!productType) {
+                /* Это может быть плед/другой товар из каталога — для конструктора он не нужен. */
+                if (/^(P|PP|N)/.test(cleanSku(sku))) {
+                    console.warn('[setConstructor] Тип товара не определён:', {title, sku, product, edition});
+                }
+                return;
+            }
+
+            const colorRaw = firstNotEmpty(
+                edition && edition['Цвет'],
+                edition && edition.color,
+                edition && edition.Color,
+                product['Цвет'],
+                product.color,
+                product.Color
+            );
+
+            let color = null;
+
+            if (colorRaw) {
+                color = TILDA_COLOR_MAP[normalizeTildaColor(colorRaw)] || detectColorFromText(colorRaw);
+            }
+
+            color = color || skuInfo.color || detectColorFromText(title);
+
+            if (!color) {
+                console.warn('[setConstructor] Цвет не определён:', {
+                    productType,
+                    title,
+                    sku,
+                    colorRaw,
+                    product,
+                    edition
+                });
+                return;
+            }
+
+            const sizeRaw = firstNotEmpty(
+                edition && edition['Размер'],
+                edition && edition.size,
+                edition && edition.Size,
+                product['Размер'],
+                product.size,
+                product.Size
+            );
+
+            let size = null;
+
+            if (productType === 'sheet') {
+                size = TILDA_SIZE_MAP[normalizeTildaSize(sizeRaw)]
+                    || skuInfo.size
+                    || detectSizeFromText(productType, title + ' ' + sku + ' ' + sizeRaw);
+
+                if (!size) {
+                    console.warn('[setConstructor] Размер простыни не определён:', {
+                        title,
+                        sku,
+                        sizeRaw,
+                        product,
+                        edition
+                    });
+                    return;
+                }
+            }
+
+            if (productType === 'duvet') {
+                size = TILDA_DUVET_SIZE_MAP[normalizeTildaSize(sizeRaw)]
+                    || skuInfo.size
+                    || detectSizeFromText(productType, title + ' ' + sku + ' ' + sizeRaw);
+
+                if (!size) {
+                    console.warn('[setConstructor] Размер пододеяльника не определён:', {
+                        title,
+                        sku,
+                        sizeRaw,
+                        product,
+                        edition
+                    });
+                    return;
+                }
+            }
+
+            const quantity = getProductQuantity(product, edition);
+            const price = getProductPrice(product, edition);
+            const img = getProductImage(product, edition);
+
+            const source = product._selflesSource || (edition ? 'edition' : 'single-card');
+            const nextRecord = {
+                quantity,
+                price,
+                sku,
+                img,
+                title,
+                color,
+                size,
+                name: title || sku,
+                url: product.url || product.href || '',
+                source
+            };
+
+            if (shouldReplaceStockRecord(stockCache[uid], nextRecord)) {
+                stockCache[uid] = nextRecord;
+            } else if (stockCache[uid]) {
+                /*
+                  Не даём более слабому/неполному источнику затереть рабочий остаток,
+                  но добираем пустые поля, если они появились позже.
+                */
+                stockCache[uid].price = stockCache[uid].price || nextRecord.price;
+                stockCache[uid].img = stockCache[uid].img || nextRecord.img;
+                stockCache[uid].title = stockCache[uid].title || nextRecord.title;
+                stockCache[uid].name = stockCache[uid].name || nextRecord.name;
+                stockCache[uid].url = stockCache[uid].url || nextRecord.url;
+                stockCache[uid].sku = stockCache[uid].sku || nextRecord.sku;
+                stockCache[uid].color = stockCache[uid].color || nextRecord.color;
+                stockCache[uid].size = stockCache[uid].size || nextRecord.size;
+            }
+
+            setMappedUid(productType, size, color, uid);
+
+            matchStats[productType]++;
+
+        }
+
+        function isSizedItem(itemKey) {
+            return itemKey === 'sheet' || itemKey === 'duvet';
+        }
+
+        function getItemSize(itemKey) {
+            return isSizedItem(itemKey) ? state[itemKey].size : null;
+        }
+
+        function hasApiDataLoaded() {
+            return Object.keys(stockCache).length > 0;
+        }
+
+        function hasValidApiMapping(itemKey, size) {
+            if (!hasApiDataLoaded()) return false;
+            if (isSizedItem(itemKey)) {
+                return !!(PRODUCT_UID_MAP[itemKey] && PRODUCT_UID_MAP[itemKey][size] && Object.keys(PRODUCT_UID_MAP[itemKey][size]).length);
+            }
+            return !!(PRODUCT_UID_MAP[itemKey] && Object.keys(PRODUCT_UID_MAP[itemKey]).length);
+        }
+
+        function getVariant(itemKey, color, size) {
+            const uid = getProductUID(itemKey, color, size);
+            return uid && stockCache[uid] ? stockCache[uid] : null;
+        }
+
+        function isVariantInStock(variant) {
+            return !!(variant && Number(variant.quantity) > 0);
+        }
+
+        function getAvailableSizes(itemKey) {
+            if (!isSizedItem(itemKey) || !hasApiDataLoaded()) return [];
+            return Object.keys(PRODUCT_UID_MAP[itemKey] || {}).filter(sizeKey => {
+                const sizeMap = PRODUCT_UID_MAP[itemKey][sizeKey];
+                return sizeMap && Object.keys(sizeMap).some(colorKey => {
+                    return isVariantInStock(getVariant(itemKey, colorKey, sizeKey));
+                });
+            });
+        }
+
+        function syncSizeOptions(itemKey, itemEl) {
+            if (!isSizedItem(itemKey)) return;
+
+            const select = itemEl.querySelector(
+                itemKey === 'sheet'
+                    ? '.js-size'
+                    : '.js-size-duvet'
+            );
+
+            if (!select) return;
+
+            const availableSizes = getAvailableSizes(itemKey);
+
+            const sizeList =
+                itemKey === 'sheet'
+                    ? SHEET_SIZES
+                    : DUVET_SIZES;
+
+            const dataReady = hasApiDataLoaded();
+
+            Array.from(select.options).forEach(option => {
+                const foundSize = sizeList.find(
+                    s => s.key === option.value
+                );
+
+                const baseLabel =
+                    foundSize?.label ||
+                    option.textContent.replace(
+                        /\s·\sнет в наличии$/,
+                        ''
+                    );
+
+                const isAvailable =
+                    dataReady &&
+                    hasApiDataLoaded() &&
+                    availableSizes.includes(option.value);
+
+                // Пока ST315N еще не загрузился, ничего не объявляем
+                // отсутствующим, но выбирать размер уже нельзя.
+                const nextText = !dataReady
+                    ? baseLabel
+                    : isAvailable
+                        ? baseLabel
+                        : `${baseLabel} · нет в наличии`;
+
+                const nextDisabled = !isAvailable;
+
+                if (option.textContent !== nextText) {
+                    option.textContent = nextText;
+                }
+
+                if (option.disabled !== nextDisabled) {
+                    option.disabled = nextDisabled;
+                }
+            });
+
+            enhanceConstructorSizeSelect(select);
+            syncCustomSizeSelect(select);
+        }
+
+        function getFirstAvailableSize(itemKey) {
+            const availableSizes = getAvailableSizes(itemKey);
+            return availableSizes.length ? availableSizes[0] : null;
+        }
+
+        function getLastValidSize(itemKey) {
+            return state[itemKey].lastValidSize || getFirstAvailableSize(itemKey) || state[itemKey].size;
+        }
+
+        function updateAddToCartState() {
+            const addBtn = document.getElementById('addToCart');
+            if (!addBtn) return;
+
+            const hasReadySelection = Object.keys(state).some(itemKey => {
+                const itemState = state[itemKey];
+                if (!itemState.enabled || !itemState.qty || !itemState.color) return false;
+                return isVariantInStock(getVariant(itemKey, itemState.color, getItemSize(itemKey)));
+            });
+
+            addBtn.disabled = !hasReadySelection;
+            addBtn.setAttribute('aria-disabled', String(!hasReadySelection));
+            addBtn.style.opacity = hasReadySelection ? '1' : '0.5';
+            addBtn.style.cursor = hasReadySelection ? 'pointer' : 'not-allowed';
+        }
+
+        const stockCache = {};
+
+        const PRODUCT_UID_MAP = {
+            pillowcase: {},
+            duvet: {},
+            sheet: {}
+        };
+
+        function shouldReplaceStockRecord(existing, candidate) {
+            return !!candidate;
+        }
+
+        function shouldReplaceMappedUid(existingUid, candidateUid) {
+            if (!existingUid) return true;
+            if (existingUid === candidateUid) return true;
+
+            return shouldReplaceStockRecord(stockCache[existingUid], stockCache[candidateUid]);
+        }
+
+        function setMappedUid(productType, size, color, uid) {
+            if (productType === 'sheet' || productType === 'duvet') {
+                if (!PRODUCT_UID_MAP[productType][size]) PRODUCT_UID_MAP[productType][size] = {};
+
+                const existingUid = PRODUCT_UID_MAP[productType][size][color];
+
+                if (shouldReplaceMappedUid(existingUid, uid)) {
+                    PRODUCT_UID_MAP[productType][size][color] = uid;
+                }
+
+                return;
+            }
+
+            const existingUid = PRODUCT_UID_MAP[productType][color];
+
+            if (shouldReplaceMappedUid(existingUid, uid)) {
+                PRODUCT_UID_MAP[productType][color] = uid;
+            }
+        }
+
+        function canonicalConstructorSku(value) {
+            const clean = cleanSku(value);
+            const aliases = window.SELFLES_SKU_ALIASES || {};
+            return cleanSku(aliases[clean] || clean);
+        }
+
+        function getCardSku(card) {
+            if (!card) return '';
+
+            const skuEl = card.querySelector(
+                '.js-product-sku, .js-store-prod-sku, .t-store__card__sku, [data-product-sku], [data-sku]'
+            );
+
+            const directValue = firstNotEmpty(
+                card.getAttribute('data-product-sku'),
+                card.getAttribute('data-sku'),
+                card.getAttribute('data-selfles-sku'),
+                skuEl && skuEl.getAttribute && skuEl.getAttribute('data-product-sku'),
+                skuEl && skuEl.getAttribute && skuEl.getAttribute('data-sku'),
+                skuEl && skuEl.textContent
+            );
+
+            if (directValue) {
+                const directSku = canonicalConstructorSku(directValue);
+                if (detectBySku(directSku).productType) return directSku;
+            }
+
+            const textMatch = String(card.textContent || '')
+                .toUpperCase()
+                .match(/\b(?:N[WPGCBS]-?BAM\d+|P(?:160|180|KS|EUR)[WPGCBS]-?BAM\d+|PP(?:150|180|220)?[WPGCBS]-?BAM\d+)\b/);
+
+            if (textMatch) {
+                return canonicalConstructorSku(textMatch[0]);
+            }
+
+            return getManifestSkuByUid(firstNotEmpty(
+                card.getAttribute('data-product-gen-uid'),
+                card.getAttribute('data-product-uid'),
+                card.getAttribute('data-product-lid')
+            ));
+        }
+
+        function getCardTitle(card) {
+            const titleEl = card && card.querySelector('.js-product-name, .js-store-prod-name, .t-store__card__title');
+            return titleEl ? String(titleEl.textContent || '').trim() : '';
+        }
+
+        function getCardPrice(card) {
+            const priceEl = card && card.querySelector('.js-product-price, .js-store-prod-price-val, .t-store__card__price-value, .t-store__card__price');
+            return priceEl ? parseMoney(priceEl.textContent) : 0;
+        }
+
+        function extractCardImage(card) {
+            const img = card && card.querySelector('img[src], img[data-original], .t-store__card__img[data-original], [data-original]');
+            const bgNode = card && card.querySelector('[style*="background-image"]');
+            const bg = bgNode && bgNode.style ? bgNode.style.backgroundImage.match(/url\(["']?([^"')]+)["']?\)/) : null;
+
+            return (img && (img.getAttribute('data-original') || img.getAttribute('src'))) || (bg && bg[1]) || '';
+        }
+
+        function getCardUrl(card) {
+            const link = card && card.querySelector('a[href]');
+            return (card && card.getAttribute('data-product-url')) || (link ? link.getAttribute('href') : '') || '';
+        }
+
+        function isExplicitlySoldOutCard(card) {
+            const text = String(card && card.textContent || '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+
+            return !!(card && (
+                card.classList.contains('selfles-card-sold-out') ||
+                card.classList.contains('t-store__card_sold-out') ||
+                card.querySelector('.js-store-prod-sold-out, .t-store__card__sold-out-msg, .t-store__prod-popup__sold-out, .t-store__prod__sold-out') ||
+                text === 'нет в наличии'
+            ));
+        }
+
+        function getCardQuantity(card, fallbackQuantity) {
+            const hasInv = card && card.hasAttribute('data-product-inv');
+            const rawInv = hasInv ? String(card.getAttribute('data-product-inv') || '').trim() : '';
+            const availability = card ? card.querySelector('[itemprop="availability"]') : null;
+            const availabilityHref = availability ? String(availability.getAttribute('href') || '').toLowerCase() : '';
+            let qty;
+
+            if (hasInv && rawInv !== '') {
+                qty = Number(rawInv.replace(',', '.'));
+                return isFinite(qty) ? qty : 0;
+            }
+
+            if (isExplicitlySoldOutCard(card) || availabilityHref.indexOf('outofstock') !== -1) {
+                return 0;
+            }
+
+            /* Пустой data-product-inv="" у Tilda = товар доступен без ограниченного остатка. */
+            if (hasInv && rawInv === '') {
+                return 99999;
+            }
+
+            if (availabilityHref.indexOf('instock') !== -1) {
+                return 99999;
+            }
+
+            qty = Number(fallbackQuantity || 0);
+            return isFinite(qty) ? qty : 0;
+        }
+
+        function loadProductsFromManifest() {
+            const manifest = getMergedProductsManifest();
+            const matchStats = {pillowcase: 0, duvet: 0, sheet: 0};
+            let count = 0;
+
+            Object.keys(manifest).forEach(skuKey => {
+                const item = manifest[skuKey] || {};
+                const sku = canonicalConstructorSku(item.sku || skuKey);
+                const parsed = detectBySku(sku);
+
+                if (!sku || !parsed.productType) return;
+
+                registerCatalogVariant({
+                    uid: firstNotEmpty(item.tildaUid, item.uid, item.product_uid, item.gen_uid, sku),
+                    sku: sku,
+                    title: firstNotEmpty(item.fullTitle, item.title),
+                    price: getProductPrice(item, null),
+                    img: firstNotEmpty(item.image, item.img, item.photo),
+                    quantity: getProductQuantity(item, null),
+                    color: item.color,
+                    size: item.size,
+                    url: item.url,
+                    _selflesSource: 'manifest'
+                }, null, matchStats);
+                count++;
+            });
+
+            if (count) {
+                window.SELFLES_STOCK_DEBUG = {PRODUCT_GEN_UIDS, PRODUCT_UID_MAP, stockCache};
+            }
+
+            return count > 0;
+        }
+
+        function resetConstructorProductData() {
+            Object.keys(stockCache).forEach(function (uid) {
+                delete stockCache[uid];
+            });
+
+            PRODUCT_UID_MAP.pillowcase = {};
+            PRODUCT_UID_MAP.duvet = {};
+            PRODUCT_UID_MAP.sheet = {};
+        }
+
+        function getLiveTildaStoreRoots() {
+            const roots = [];
+            const seenRoots = new Set();
+
+            document.querySelectorAll('.t-rec').forEach(function (block) {
+                if (!block || seenRoots.has(block)) return;
+
+                const hasStore = !!block.querySelector(
+                    '.t-store, .js-store, .t-store__grid-cont, [data-product-gen-uid], .js-product.t-store__card, .t-store__card'
+                );
+
+                if (!hasStore) return;
+
+                seenRoots.add(block);
+                roots.push(block);
+            });
+
+            return roots;
+        }
+
+        function loadProductsFromCatalogDom() {
+            const matchStats = {pillowcase: 0, duvet: 0, sheet: 0};
+            const seenProducts = new Set();
+            const debugBlocks = [];
+            let count = 0;
+
+            getLiveTildaStoreRoots().forEach(function (liveRoot) {
+                const cards = [];
+                const seenCards = new Set();
+
+                liveRoot.querySelectorAll(
+                    '.js-product.t-store__card, .t-store__card, [data-product-gen-uid]'
+                ).forEach(function (node) {
+                    const card = node.closest && node.closest('.js-product.t-store__card, .t-store__card') || node;
+                    if (!card || seenCards.has(card)) return;
+                    seenCards.add(card);
+                    cards.push(card);
+                });
+
+                let matched = 0;
+
+                cards.forEach(function (card) {
+                    const sku = getCardSku(card);
+                    const parsed = sku ? detectBySku(sku) : null;
+
+                    // Конструктору нужны только наволочки, простыни и пододеяльники.
+                    if (!sku || !parsed || !parsed.productType) return;
+
+                    const uid = String(firstNotEmpty(
+                        card.getAttribute('data-product-gen-uid'),
+                        card.getAttribute('data-product-uid'),
+                        card.getAttribute('data-product-lid'),
+                        sku
+                    ));
+
+                    if (!uid) return;
+
+                    const uniqueKey = uid + ':' + sku;
+                    if (seenProducts.has(uniqueKey)) return;
+                    seenProducts.add(uniqueKey);
+
+                    registerCatalogVariant({
+                        uid: uid,
+                        sku: sku,
+                        title: getCardTitle(card),
+                        price: getCardPrice(card),
+                        img: extractCardImage(card),
+                        quantity: getCardQuantity(card, 0),
+                        url: getCardUrl(card),
+                        _selflesSource: 'tilda-live-dom'
+                    }, null, matchStats);
+
+                    matched++;
+                    count++;
+                });
+
+                debugBlocks.push({
+                    id: liveRoot.id || '',
+                    cards: cards.length,
+                    matched: matched,
+                    display: window.getComputedStyle ? getComputedStyle(liveRoot).display : ''
+                });
+            });
+
+            window.SELFLES_STOCK_DEBUG = {
+                source: 'tilda-live-dom-auto',
+                blocks: debugBlocks,
+                matchedProducts: count,
+                matchStats: matchStats,
+                PRODUCT_UID_MAP: PRODUCT_UID_MAP,
+                stockCache: stockCache
+            };
+
+            return count > 0;
+        }
+
+        function bootstrapProductDataFromPage() {
+            resetConstructorProductData();
+
+            // Основной источник - живой технический Tilda store-блок.
+            if (loadProductsFromCatalogDom()) {
+                return true;
+            }
+
+            // Fallback - общий live-index, если он уже успел собраться.
+            // Он также строится из тех же Tilda store-блоков, не из статики.
+            return loadProductsFromManifest();
+        }
+
+        function getProductUID(itemKey, color, size) {
+            if (isSizedItem(itemKey)) {
+                return PRODUCT_UID_MAP[itemKey][size] && PRODUCT_UID_MAP[itemKey][size][color];
+            }
+            return PRODUCT_UID_MAP[itemKey] && PRODUCT_UID_MAP[itemKey][color];
+        }
+
+        function getProductStock(itemKey, color, size) {
+            const uid = getProductUID(itemKey, color, size);
+            if (!uid || !stockCache[uid]) return null;
+            return stockCache[uid].quantity || 0;
+        }
+
+        function isProductAvailable(itemKey, color, size) {
+            if (!hasApiDataLoaded()) {
+                return false;
+            }
+            return isVariantInStock(getVariant(itemKey, color, size));
+        }
+
+        function getAvailableColors(itemKey, size) {
+            if (!hasApiDataLoaded()) {
+                return [];
+            }
+
+            return COLORS
+                .map(c => c.key)
+                .filter(color => {
+                    return isProductAvailable(itemKey, color, size);
+                });
+        }
+
+        function getFirstAvailableColor(itemKey, size) {
+            const available = getAvailableColors(itemKey, size);
+            if (available.length > 0) {
+                return available[0];
+            }
+            return null;
+        }
+
+        const state = {
+            pillowcase: {enabled: false, color: '', qty: 0},
+            sheet: {enabled: false, color: '', qty: 0, size: '160', lastValidSize: ''},
+            duvet: {enabled: false, color: '', qty: 0, size: '200', lastValidSize: ''}
+        };
+
+        const root = document.getElementById('setConstructor');
+        if (!root) {
+            console.warn('Элемент #setConstructor не найден');
+            return;
+        }
+
+        const imgLayers = {
+            pillowcase: document.getElementById('img-pillowcase'),
+            sheet: document.getElementById('img-sheet'),
+            duvet: document.getElementById('img-duvet')
+        };
+        Object.values(imgLayers).forEach(img => {
+            if (img && !img.dataset.defaultSrc) {
+                img.dataset.defaultSrc = img.src || '';
+            }
+        });
+
+        const fmt = new Intl.NumberFormat('ru-RU');
+
+        function recalcTotal() {
+            let sum = 0;
+            for (const key of Object.keys(state)) {
+                const s = state[key];
+                if (!s.enabled) continue;
+                const size = isSizedItem(key) ? s.size : null;
+                if (!isProductAvailable(key, s.color, size)) continue;
+
+                const variant = getVariant(key, s.color, size);
+                if (!variant) continue;
+                const price = Number(variant.price) || 0;
+
+                sum += price * (s.qty || 0);
+            }
+            const el = document.getElementById('totalSum');
+            if (el) el.textContent = fmt.format(sum) + ' ₽';
+            updateAddToCartState();
+        }
+
+        function getConstructorCartName(itemKey, size) {
+            if (itemKey === 'pillowcase') {
+                return 'Комплект наволочек (2 шт.)';
+            }
+
+            if (itemKey === 'duvet') {
+                return 'Пододеяльник';
+            }
+
+            if (itemKey === 'sheet') {
+                if (size === 'KS' || size === 'EUR') {
+                    return 'Простыня без резинки';
+                }
+
+                return 'Простыня на резинке';
+            }
+
+            return 'Товар';
+        }
+
+        function addProductViaCatalog(itemKey, color, size, quantity) {
+            if (typeof window.tcart__addProduct !== 'function') {
+                console.warn('tcart__addProduct не найдена');
+                return false;
+            }
+
+            const uid = getProductUID(itemKey, color, size);
+            const variant = getVariant(itemKey, color, size);
+
+            if (!uid || !variant) {
+                console.warn(
+                    `Вариант не найден в каталоге: ${itemKey}, цвет: ${color}${size ? ', размер: ' + size : ''}`
+                );
+                return false;
+            }
+
+            const availableQuantity = Number(variant.quantity);
+
+            const requestedQuantity = Math.max(1, Number(quantity) || 1);
+
+            if (
+                !Number.isFinite(availableQuantity) ||
+                availableQuantity < requestedQuantity
+            ) {
+                console.warn(
+                    `Товар закончился: ${variant.sku}. Остаток: ${
+                        Number.isFinite(availableQuantity) ? availableQuantity : 'неизвестен'
+                    }, требуется: ${requestedQuantity}`
+                );
+
+                return false;
+            }
+
+            window.tcart__addProduct({
+                uid,
+                name: getConstructorCartName(itemKey, size),
+                price: variant.price,
+                sku: variant.sku,
+                img: variant.img,
+                quantity: requestedQuantity
+            });
+
+            return true;
+        }
+
+        function updateColorAvailability(itemKey, size) {
+            const itemEl = root.querySelector(`.item[data-item="${itemKey}"]`);
+            if (!itemEl) return;
+
+            const sw = itemEl.querySelector('.swatches');
+            if (!sw) return;
+
+            if (!sw.hasAttribute('data-cursor-handlers-added')) {
+
+                sw.addEventListener('mouseover', function (e) {
+                    const target = e.target;
+                    if (target && target.classList.contains('swatch') &&
+                        (target.disabled || target.hasAttribute('aria-disabled') || target.hasAttribute('data-unavailable'))) {
+                        target.style.setProperty('cursor', 'not-allowed', 'important');
+                        sw.style.setProperty('cursor', 'not-allowed', 'important');
+                    } else if (target && target.classList.contains('swatch')) {
+                        sw.style.setProperty('cursor', 'default', 'important');
+                    }
+                });
+                sw.addEventListener('mouseout', function (e) {
+                    const target = e.target;
+                    if (target && target.classList.contains('swatch')) {
+                        sw.style.setProperty('cursor', 'default', 'important');
+                    }
+                });
+                sw.setAttribute('data-cursor-handlers-added', 'true');
+            }
+
+            const availableColors = getAvailableColors(itemKey, size);
+
+            sw.querySelectorAll('.swatch').forEach(btn => {
+                const colorKey = btn.dataset.color;
+                const isAvailable = availableColors.includes(colorKey);
+
+                if (isAvailable) {
+
+                    btn.disabled = false;
+                    btn.removeAttribute('disabled');
+                    btn.removeAttribute('aria-disabled');
+                    btn.removeAttribute('data-unavailable');
+                    btn.style.setProperty('cursor', 'pointer', 'important');
+                    btn.style.opacity = '1';
+                    btn.style.setProperty('pointer-events', 'auto', 'important');
+                } else {
+                    btn.disabled = true;
+                    btn.setAttribute('aria-disabled', 'true');
+                    btn.setAttribute('data-unavailable', 'true');
+                    btn.setAttribute('aria-selected', 'false');
+                    btn.style.setProperty('cursor', 'not-allowed', 'important');
+                    btn.style.opacity = '0.3';
+                    btn.style.setProperty('pointer-events', 'auto', 'important');
+                }
+            });
+
+            updateQtyAvailability(itemKey, size);
+        }
+
+        function updateQtyAvailability(itemKey, size) {
+            const itemEl = root.querySelector(`.item[data-item="${itemKey}"]`);
+            if (!itemEl) return;
+
+            const currentColor = state[itemKey].color;
+            const isAvailable = isProductAvailable(itemKey, currentColor, size);
+
+            const qtyInput = itemEl.querySelector('.js-qty');
+            const decBtn = itemEl.querySelector('.js-qty-dec');
+            const incBtn = itemEl.querySelector('.js-qty-inc');
+
+            if (!isAvailable) {
+                if (qtyInput) {
+                    qtyInput.disabled = true;
+                    qtyInput.setAttribute('aria-disabled', 'true');
+                    qtyInput.value = 0;
+                    state[itemKey].qty = 0;
+                    state[itemKey].enabled = false;
+                }
+                if (decBtn) {
+                    decBtn.disabled = true;
+                    decBtn.setAttribute('aria-disabled', 'true');
+                }
+                if (incBtn) {
+                    incBtn.disabled = true;
+                    incBtn.setAttribute('aria-disabled', 'true');
+                }
+                updateLayer(itemKey);
+                updateControls(itemKey, itemEl);
+            } else {
+                if (qtyInput) {
+                    qtyInput.disabled = false;
+                    qtyInput.removeAttribute('aria-disabled');
+                    if (state[itemKey].qty === 0) {
+                        state[itemKey].qty = 1;
+                        qtyInput.value = 1;
+                        state[itemKey].enabled = true;
+                    }
+                }
+                if (decBtn) {
+                    decBtn.disabled = false;
+                    decBtn.removeAttribute('aria-disabled');
+                }
+                if (incBtn) {
+                    incBtn.disabled = false;
+                    incBtn.removeAttribute('aria-disabled');
+                }
+                updateLayer(itemKey);
+                updateControls(itemKey, itemEl);
+            }
+
+            recalcTotal();
+        }
+
+        function updateControls(itemKey, itemEl) {
+            const el =
+                itemEl ||
+                root.querySelector(
+                    `.item[data-item="${itemKey}"]`
+                );
+
+            if (!el) return;
+
+            const size = getItemSize(itemKey);
+
+            const isAvailable = isProductAvailable(
+                itemKey,
+                state[itemKey].color,
+                size
+            );
+
+            el.querySelectorAll(
+                '.js-qty, .js-qty-dec, .js-qty-inc'
+            ).forEach(ctrl => {
+                if (isAvailable) {
+                    ctrl.disabled = false;
+                    ctrl.removeAttribute('disabled');
+                    ctrl.removeAttribute('aria-disabled');
+                } else {
+                    ctrl.disabled = true;
+                    ctrl.setAttribute('disabled', '');
+                    ctrl.setAttribute(
+                        'aria-disabled',
+                        'true'
+                    );
+                }
+            });
+        }
+
+        function selectColor(itemKey, colorKey, swWrap) {
+            const size = getItemSize(itemKey);
+            const previousColor = state[itemKey].color;
+
+            const isAvailable = isProductAvailable(itemKey, colorKey, size);
+            if (!isAvailable) {
+                console.warn(`[setConstructor] Цвет ${colorKey} недоступен для ${itemKey}`);
+                return;
+            }
+
+            state[itemKey].color = colorKey;
+            swWrap.querySelectorAll('.swatch').forEach(b =>
+                b.setAttribute('aria-selected', b.dataset.color === colorKey ? 'true' : 'false')
+            );
+
+            if (previousColor !== colorKey && isAvailable) {
+                state[itemKey].qty = 1;
+                state[itemKey].enabled = true;
+                const itemEl = root.querySelector(`.item[data-item="${itemKey}"]`);
+                if (itemEl) {
+                    const qtyInput = itemEl.querySelector('.js-qty');
+                    if (qtyInput) qtyInput.value = 1;
+                }
+            }
+
+            updateLayer(itemKey);
+            updateQtyAvailability(itemKey, size);
+            recalcTotal();
+        }
+
+        function updateLayer(itemKey) {
+            const img = imgLayers[itemKey];
+            if (!img) return;
+
+            const color = state[itemKey].color;
+
+            const layerUrl =
+                color &&
+                IMAGE_LAYERS[itemKey] &&
+                IMAGE_LAYERS[itemKey][color]
+                    ? IMAGE_LAYERS[itemKey][color]
+                    : (img.dataset.defaultSrc || '');
+
+            if (layerUrl) {
+                if ((img.getAttribute('src') || '') !== layerUrl) {
+                    img.setAttribute('src', layerUrl);
+                }
+                if (!img.classList.contains('layer-visible')) img.classList.add('layer-visible');
+            } else {
+                img.classList.remove('layer-visible');
+            }
+        }
+
+        function initializeItems() {
+            const duvetItem = root.querySelector('.item[data-item="duvet"]');
+            if (duvetItem && !duvetItem.querySelector('.js-size-duvet')) {
+                const itemHead = duvetItem.querySelector('.item-head');
+                if (itemHead) {
+                    itemHead.insertAdjacentHTML('afterend', '<label class="size"><select class="size-select js-size-duvet" aria-label="Размер пододеяльника"><option value="150">150 × 200</option><option value="180">180 × 210</option><option value="200">200 × 220</option><option value="220">220 × 240</option></select></label>');
+                }
+            }
+            root.querySelectorAll('.item').forEach(item => {
+                const key = item.dataset.item;
+                const sw = item.querySelector('.swatches');
+                const qtyInput = item.querySelector('.js-qty');
+                const dec = item.querySelector('.js-qty-dec');
+                const inc = item.querySelector('.js-qty-inc');
+                if (!sw || !qtyInput || !dec || !inc) return;
+
+                if (item.hasAttribute('data-ui-initialized')) {
+                    syncSizeOptions(key, item);
+                    updateColorAvailability(key, getItemSize(key));
+                    updateControls(key, item);
+                    return;
+                }
+
+                sw.innerHTML = COLORS.map(c =>
+                    `<button class="swatch" type="button" data-color="${c.key}" title="${c.label}" style="background:${c.hex}"></button>`
+                ).join('');
+
+                syncSizeOptions(key, item);
+                updateColorAvailability(key, getItemSize(key));
+
+                const size = getItemSize(key);
+                const firstAvailable = getFirstAvailableColor(key, size);
+                if (firstAvailable) {
+                    state[key].color = firstAvailable;
+                    selectColor(key, state[key].color, sw);
+                } else {
+
+                    state[key].color = '';
+                    state[key].enabled = false;
+                    state[key].qty = 0;
+                    qtyInput.value = 0;
+                    updateLayer(key);
+                    updateControls(key, item);
+                }
+
+                sw.addEventListener('click', e => {
+                    const btn = e.target.closest('.swatch');
+                    if (!btn || !btn.classList.contains('swatch')) return;
+
+                    const colorKey = btn.dataset.color;
+                    if (!colorKey) return;
+
+                    const size = getItemSize(key);
+                    const isAvailable = isProductAvailable(key, colorKey, size);
+                    if (!isAvailable) {
+                        console.warn(`[setConstructor] Клик по недоступному цвету ${colorKey}`);
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+
+                    if (btn.disabled || btn.hasAttribute('data-unavailable') || btn.hasAttribute('aria-disabled')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+
+                    selectColor(key, colorKey, sw);
+                }, {passive: false});
+
+                if (key === 'sheet' || key === 'duvet') {
+                    const sizeSelect = item.querySelector(key === 'sheet' ? '.js-size' : '.js-size-duvet');
+                    const sizeList = key === 'sheet' ? SHEET_SIZES : DUVET_SIZES;
+                    if (sizeSelect) {
+                        sizeSelect.innerHTML = sizeList.map(s =>
+                            `<option value="${s.key}">${s.label}</option>`
+                        ).join('');
+                        sizeSelect.value = state[key].size;
+                        sizeSelect.addEventListener('change', () => {
+                            const requestedSize = sizeSelect.value;
+                            const availableSizes = getAvailableSizes(key);
+                            if (availableSizes.length > 0 && !availableSizes.includes(requestedSize)) {
+                                const fallbackSize = getLastValidSize(key);
+                                sizeSelect.value = fallbackSize;
+                                return;
+                            }
+
+                            state[key].size = requestedSize;
+                            state[key].lastValidSize = requestedSize;
+                            syncSizeOptions(key, item);
+                            updateColorAvailability(key, requestedSize);
+
+                            const availableColors = getAvailableColors(key, requestedSize);
+
+                            if (availableColors.length > 0) {
+
+                                state[key].qty = 1;
+                                state[key].enabled = true;
+                                qtyInput.value = 1;
+
+                                if (!availableColors.includes(state[key].color)) {
+                                    selectColor(key, availableColors[0], sw);
+                                } else {
+                                    sw.querySelectorAll('.swatch').forEach(btn =>
+                                        btn.setAttribute('aria-selected', btn.dataset.color === state[key].color ? 'true' : 'false')
+                                    );
+                                    updateQtyAvailability(key, requestedSize);
+                                    updateLayer(key);
+                                }
+                                recalcTotal();
+                            } else {
+                                state[key].color = '';
+                                state[key].qty = 0;
+                                state[key].enabled = false;
+                                updateQtyAvailability(key, requestedSize);
+                                updateLayer(key);
+                                recalcTotal();
+                            }
+                        });
+                        syncSizeOptions(key, item);
+                        updateColorAvailability(key, state[key].size);
+                    }
+                }
+
+                const clamp = (v, maxStock) => {
+
+                    const max = maxStock || 99;
+                    v = parseInt(v);
+                    if (isNaN(v)) v = 0;
+                    return Math.max(0, Math.min(max, v));
+                };
+
+                const getMaxQty = () => {
+                    const size = getItemSize(key);
+
+                    if (!hasValidApiMapping(key, size)) {
+                        return 0;
+                    }
+
+                    const stock = Number(
+                        getProductStock(
+                            key,
+                            state[key].color,
+                            size
+                        )
+                    );
+
+                    return Number.isFinite(stock) && stock > 0
+                        ? stock
+                        : 0;
+                };
+
+                qtyInput.value = state[key].qty;
+
+                qtyInput.addEventListener('input', () => {
+                    const size = getItemSize(key);
+                    const isAvailable = isProductAvailable(key, state[key].color, size);
+                    if (!isAvailable) {
+                        qtyInput.value = 0;
+                        state[key].qty = 0;
+                        state[key].enabled = false;
+                        updateLayer(key);
+                        updateControls(key, item);
+                        recalcTotal();
+                        return;
+                    }
+                    const maxQty = getMaxQty();
+                    const v = clamp(qtyInput.value, maxQty);
+                    qtyInput.value = v;
+                    state[key].qty = v;
+                    state[key].enabled = v > 0;
+                    updateLayer(key);
+                    updateControls(key, item);
+                    recalcTotal();
+                });
+
+                dec.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const size = getItemSize(key);
+                    const isAvailable = isProductAvailable(key, state[key].color, size);
+                    if (!isAvailable) {
+                        console.warn(`[setConstructor] Товар недоступен: ${key}, цвет: ${state[key].color}`);
+                        return;
+                    }
+
+                    const maxQty = getMaxQty();
+                    const currentQty = state[key].qty || 0;
+                    const v = clamp(currentQty - 1, maxQty);
+
+                    state[key].qty = v;
+                    qtyInput.value = v;
+                    state[key].enabled = v > 0;
+                    updateLayer(key);
+                    updateControls(key, item);
+                    recalcTotal();
+
+                }, {passive: false});
+
+                inc.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const size = getItemSize(key);
+                    const isAvailable = isProductAvailable(key, state[key].color, size);
+                    if (!isAvailable) {
+                        console.warn(`[setConstructor] Товар недоступен: ${key}, цвет: ${state[key].color}`);
+                        return;
+                    }
+
+                    const maxQty = getMaxQty();
+                    const currentQty = state[key].qty || 0;
+
+                    if (maxQty > 0 && currentQty >= maxQty) {
+
+                        return;
+                    }
+
+                    if (!state[key].enabled || currentQty === 0) {
+                        state[key].enabled = true;
+                        state[key].qty = 1;
+                        qtyInput.value = 1;
+                        updateLayer(key);
+                        updateControls(key, item);
+                        recalcTotal();
+
+                        return;
+                    }
+
+                    const v = clamp(currentQty + 1, maxQty);
+                    state[key].qty = v;
+                    qtyInput.value = v;
+                    recalcTotal();
+
+                }, {passive: false});
+
+                const removeBtn = item.querySelector('.js-remove');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', () => {
+                        state[key].enabled = false;
+                        state[key].qty = 0;
+                        qtyInput.value = 0;
+                        updateLayer(key);
+                        updateControls(key, item);
+                        recalcTotal();
+                    });
+                }
+
+                updateControls(key, item);
+                item.setAttribute('data-ui-initialized', 'true');
+            });
+
+            Object.keys(state).forEach(updateLayer);
+            recalcTotal();
+        }
+
+        function updateUIAfterDataLoad() {
+            if (deferConstructorUpdateWhileSelectBusy(updateUIAfterDataLoad)) return;
+
+            root.querySelectorAll('.item').forEach(item => {
+                const key = item.dataset.item;
+                const sw = item.querySelector('.swatches');
+                if (!sw) return;
+
+                if (isSizedItem(key)) {
+                    const firstSize = getFirstAvailableSize(key);
+                    if (firstSize && !getAvailableSizes(key).includes(state[key].size)) {
+                        state[key].size = firstSize;
+                        state[key].lastValidSize = firstSize;
+                        const select = item.querySelector(key === 'sheet' ? '.js-size' : '.js-size-duvet');
+                        if (select) select.value = firstSize;
+                    } else if (firstSize) {
+                        state[key].lastValidSize = state[key].size;
+                    }
+                }
+                syncSizeOptions(key, item);
+                updateColorAvailability(key, getItemSize(key));
+
+                const size = getItemSize(key);
+                if (!isProductAvailable(key, state[key].color, size)) {
+                    const firstAvailable = getFirstAvailableColor(key, size);
+                    if (firstAvailable && firstAvailable !== state[key].color) {
+                        selectColor(key, firstAvailable, sw);
+                    } else if (!firstAvailable) {
+
+                        state[key].color = '';
+                        state[key].enabled = false;
+                        state[key].qty = 0;
+                        const qtyInput = item.querySelector('.js-qty');
+                        if (qtyInput) qtyInput.value = 0;
+                        updateLayer(key);
+                        updateControls(key, item);
+                    } else if (firstAvailable === state[key].color) {
+                        state[key].enabled = true;
+                        if (state[key].qty <= 0) state[key].qty = 1;
+                    }
+                } else {
+                    sw.querySelectorAll('.swatch').forEach(btn =>
+                        btn.setAttribute('aria-selected', btn.dataset.color === state[key].color ? 'true' : 'false')
+                    );
+                }
+            });
+
+            recalcTotal();
+        }
+
+        function forceUnlockAll() {
+            if (deferConstructorUpdateWhileSelectBusy(forceUnlockAll)) return;
+            if (!root) return;
+
+            const duvetItem = root.querySelector('.item[data-item="duvet"]');
+            if (duvetItem && !duvetItem.querySelector('.js-size-duvet')) {
+                initializeItems();
+                return;
+            }
+
+            root.querySelectorAll('.item').forEach(item => {
+                const key = item.dataset.item;
+                syncSizeOptions(key, item);
+                updateColorAvailability(key, getItemSize(key));
+            });
+            updateAddToCartState();
+        }
+
+        function init() {
+            if (!root) {
+                console.warn('Элемент #setConstructor не найден, повторная попытка...');
+                setTimeout(init, 100);
+                return;
+            }
+            bootstrapProductDataFromPage();
+            initializeItems();
+
+            setTimeout(function () {
+                bootstrapProductDataFromPage();
+                forceUnlockAll();
+            }, 50);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        setTimeout(forceUnlockAll, 100);
+        setTimeout(forceUnlockAll, 300);
+        setTimeout(forceUnlockAll, 500);
+        window.addEventListener('load', forceUnlockAll);
+
+        let dataLoadInterval = null;
+        let lastLoadTime = 0;
+        const DATA_REFRESH_INTERVAL = 60000;
+
+        let liveProductsBootTimer = null;
+        let liveProductsBootAttempts = 0;
+        const LIVE_PRODUCTS_BOOT_MAX_ATTEMPTS = 80;
+
+        function applyLiveProductsToConstructor() {
+            findCatalogAndCollectUIDs();
+
+            if (!bootstrapProductDataFromPage()) {
+                return false;
+            }
+
+            lastLoadTime = Date.now();
+            updateUIAfterDataLoad();
+            return true;
+        }
+
+        function ensureLiveProductsReady() {
+            clearTimeout(liveProductsBootTimer);
+
+            // Сначала читаем сам технический Tilda store-блок.
+            if (applyLiveProductsToConstructor()) {
+                liveProductsBootAttempts = 0;
+                return true;
+            }
+
+            // Если подключен общий live-source, просим его пересобрать индекс
+            // и сразу пробуем прочитать данные еще раз.
+            if (
+                typeof window.selflesRefreshLiveProductsSource ===
+                'function'
+            ) {
+                try {
+                    window.selflesRefreshLiveProductsSource();
+                } catch (e) {
+                    console.warn(
+                        '[setConstructor] Не удалось обновить ST315N:',
+                        e
+                    );
+                }
+
+                if (applyLiveProductsToConstructor()) {
+                    liveProductsBootAttempts = 0;
+                    return true;
+                }
+            }
+
+            liveProductsBootAttempts++;
+
+            if (
+                liveProductsBootAttempts <=
+                LIVE_PRODUCTS_BOOT_MAX_ATTEMPTS
+            ) {
+                liveProductsBootTimer = setTimeout(
+                    ensureLiveProductsReady,
+                    250
+                );
+            } else {
+                console.warn(
+                    '[setConstructor] Живой Tilda store-блок не готов после ожидания',
+                    {
+                        blocks: getLiveTildaStoreRoots().map(function (block) {
+                            return {
+                                id: block.id || '',
+                                cards: block.querySelectorAll('.js-product.t-store__card, .t-store__card, [data-product-gen-uid]').length,
+                                display: window.getComputedStyle ? getComputedStyle(block).display : ''
+                            };
+                        }),
+                        stockDebug: window.SELFLES_STOCK_DEBUG || null
+                    }
+                );
+            }
+
+            return false;
+        }
+
+        function initStockCheck() {
+            ensureLiveProductsReady();
+
+            if (!dataLoadInterval) {
+                startPeriodicRefresh();
+            }
+        }
+
+        function startPeriodicRefresh() {
+            if (dataLoadInterval) return;
+
+            dataLoadInterval = setInterval(() => {
+                liveProductsBootAttempts = 0;
+                ensureLiveProductsReady();
+            }, DATA_REFRESH_INTERVAL);
+        }
+
+        window.refreshCatalogData = async function () {
+            liveProductsBootAttempts = 0;
+            return ensureLiveProductsReady();
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initStockCheck);
+        } else {
+            initStockCheck();
+        }
+        window.addEventListener('load', initStockCheck);
+
+        let bootstrapUpdateTimer = null;
+
+        function scheduleBootstrapUpdate() {
+            clearTimeout(bootstrapUpdateTimer);
+            bootstrapUpdateTimer = setTimeout(function () {
+                if (deferConstructorUpdateWhileSelectBusy(scheduleBootstrapUpdate)) return;
+
+                findCatalogAndCollectUIDs();
+                if (bootstrapProductDataFromPage()) {
+                    updateUIAfterDataLoad();
+                }
+            }, 180);
+        }
+
+        window.addEventListener('selfles:products-manifest-ready', scheduleBootstrapUpdate);
+        window.addEventListener('selfles:live-products-ready', function () {
+            liveProductsBootAttempts = 0;
+            ensureLiveProductsReady();
+        });
+        window.addEventListener(
+            'pageshow',
+            function () {
+                liveProductsBootAttempts = 0;
+                ensureLiveProductsReady();
+                scheduleBootstrapUpdate();
+            }
+        );
+
+        document.addEventListener(
+            'visibilitychange',
+            function () {
+                if (document.visibilityState !== 'visible') return;
+
+                liveProductsBootAttempts = 0;
+                ensureLiveProductsReady();
+                scheduleBootstrapUpdate();
+            }
+        );
+        window.addEventListener('load', scheduleBootstrapUpdate);
+
+        if (typeof MutationObserver !== 'undefined') {
+            const observer = new MutationObserver(function (records) {
+                const onlyConstructorChanged = records.length > 0 && records.every(function (record) {
+                    return root && record.target && (record.target === root || root.contains(record.target));
+                });
+
+                if (onlyConstructorChanged) return;
+                scheduleBootstrapUpdate();
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+
+        const addBtn = document.getElementById('addToCart');
+
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                const picks = [];
+
+                for (const itemKey of Object.keys(state)) {
+                    const s = state[itemKey];
+
+                    if (!s.enabled || !s.qty) continue;
+
+                    const size = isSizedItem(itemKey) ? s.size : null;
+                    const variant = getVariant(itemKey, s.color, size);
+
+                    if (!variant) {
+                        console.warn(
+                            `Вариант не найден: ${itemKey}, цвет: ${s.color}${size ? ', размер: ' + size : ''}`
+                        );
+
+                        alert('Один из выбранных товаров недоступен. Выберите другой цвет или размер.');
+                        return;
+                    }
+
+                    const availableQuantity = Number(variant.quantity);
+
+                    const requestedQuantity = Math.max(1, Number(s.qty) || 1);
+
+                    if (
+                        !Number.isFinite(availableQuantity) ||
+                        availableQuantity < requestedQuantity
+                    ) {
+                        console.warn(
+                            `Товар недоступен: ${variant.sku}. Остаток: ${
+                                Number.isFinite(availableQuantity)
+                                    ? availableQuantity
+                                    : 'неизвестен'
+                            }, требуется: ${requestedQuantity}`
+                        );
+
+                        alert('Один из выбранных товаров закончился. Выберите другой цвет или размер.');
+                        return;
+                    }
+
+                    picks.push({
+                        itemKey,
+                        color: s.color,
+                        size,
+                        qty: requestedQuantity
+                    });
+                }
+
+                if (!picks.length) {
+                    alert('Выберите хотя бы одну позицию');
+                    return;
+                }
+
+                for (const pick of picks) {
+                    const added = addProductViaCatalog(
+                        pick.itemKey,
+                        pick.color,
+                        pick.size,
+                        pick.qty
+                    );
+
+                    if (!added) {
+                        console.warn('Добавление товара в корзину было остановлено', pick);
+                        return;
+                    }
+                }
+
+                setTimeout(() => {
+                    if (window.tcart__openCart) {
+                        window.tcart__openCart();
+                    }
+                }, 100);
+            });
+        }
+
+        document.querySelectorAll('#deskInfo .acc-head').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const section = btn.closest('.acc');
+                const body = section.querySelector('.acc-body');
+                const expanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', String(!expanded));
+                if (expanded) {
+                    body.hidden = true;
+                    section.classList.add('acc-closed');
+                    section.classList.remove('acc-open');
+                } else {
+                    body.hidden = false;
+                    section.classList.add('acc-open');
+                    section.classList.remove('acc-closed');
+                }
+            });
+        });
+    })();
+</script>
