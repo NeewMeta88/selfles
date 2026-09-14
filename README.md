@@ -214,8 +214,6 @@ Page id полезнее названия страницы как техниче
 1. Открыть **Мои сайты → selfles → Настройки сайта → Вставка кода в HEAD**.
 2. Сверить verification/meta-теги с разделом **«Глобальный код в HEAD»** этого README.
 3. После изменения сохранить настройки и переопубликовать необходимые страницы сайта.
-
-Рекомендуется делать изменения через отдельную git-ветку и Pull Request, особенно если код меняет корзину, каталог, наличие товаров или товарные страницы.
 | `main/10.html` | `main/floating-button-before-footer.html` |
 | `main/11.html` | `main/main-catalog-rows.html` |
 | `catalog/catalog.html` | `catalog/catalog-product-runtime.html` |
