@@ -30,6 +30,21 @@ coverage/
 .env.*
 !.env.example
 
+# Credentials / private keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+credentials.json
+credentials.*.json
+service-account.json
+service-account.*.json
+secrets.json
+secrets.*.json
+.npmrc
+.netrc
+
 # OS files
 .DS_Store
 Thumbs.db
