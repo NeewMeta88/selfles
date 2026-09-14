@@ -216,36 +216,6 @@ Page id полезнее названия страницы как техниче
 3. После изменения сохранить настройки и переопубликовать необходимые страницы сайта.
 
 Рекомендуется делать изменения через отдельную git-ветку и Pull Request, особенно если код меняет корзину, каталог, наличие товаров или товарные страницы.
-
-## Перед переводом репозитория в public
-
-Перед открытием репозитория рекомендуется:
-
-- привести комментарии всех **активных** T123-блоков в Tilda к именам файлов из этого README;
-- не пытаться выравнивать количество файлов с отключёнными `off="y"` legacy-блоками;
-- сверить `styles.css` с текущим содержимым **Настройки сайта → Добавление CSS-кода**;
-- сверить глобальный блок **Настройки сайта → Вставка кода в HEAD** с зафиксированным в README содержимым;
-- учитывать внешнюю зависимость `disk.nocodered.ru`: при необходимости изменения внешних CSS/JS запросить доступ или исходники у менеджера проекта;
-- убедиться, что статические fallback-данные товаров не воспринимаются как актуальный источник наличия;
-- повторно проверить текущие файлы и историю репозитория на секреты перед публикацией;
-- выбрать и добавить `LICENSE`, только если код предполагается разрешать использовать третьим лицам. Публичный репозиторий сам по себе не задаёт лицензию на использование кода.
-
-## Старые имена файлов
-
-Для истории и поиска по старым обсуждениям:
-
-| Старое имя | Новое имя |
-| --- | --- |
-| `main/1.html` | `main/preset-product-mapping.html` |
-| `main/2.html` | `main/sticky-menu.html` |
-| `main/3.html` | `main/set-constructor-styles.html` |
-| `main/4-constructor-part-1.html` | `main/set-constructor-part-1.html` |
-| `main/4-constructor-part-2.html` | `main/set-constructor-part-2.html` |
-| `main/5.html` | `main/zero-block-slider.html` |
-| `main/6.html` | `main/cart-icon.html` |
-| `main/7.html` | `main/hover-fill-text.html` |
-| `main/8.html` | `main/preset-set-toast-styles.html` |
-| `main/9.html` | `main/preset-set-cart-handler.html` |
 | `main/10.html` | `main/floating-button-before-footer.html` |
 | `main/11.html` | `main/main-catalog-rows.html` |
 | `catalog/catalog.html` | `catalog/catalog-product-runtime.html` |
